@@ -3,12 +3,10 @@
 
 const CACHE_NAME = 'israeli-finance-v1.0.0';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/src/main.js',
-  '/src/styles/main.css',
-  '/manifest.json',
-  // Add more assets as they are created
+  './',
+  './index.html',
+  './manifest.json',
+  // Built assets will be automatically cached by their actual paths
 ];
 
 // Install event - cache resources
@@ -78,7 +76,7 @@ self.addEventListener('fetch', (event) => {
         }).catch(() => {
           // Show offline page for navigation requests
           if (event.request.mode === 'navigate') {
-            return caches.match('/');
+            return caches.match('./');
           }
         });
       })
@@ -105,7 +103,7 @@ self.addEventListener('push', (event) => {
     lang: 'he',
     vibrate: [200, 100, 200],
     data: {
-      url: '/'
+      url: './'
     },
     actions: [
       {
@@ -134,7 +132,7 @@ self.addEventListener('notificationclick', (event) => {
   
   if (event.action === 'view') {
     event.waitUntil(
-      clients.openWindow(event.notification.data.url || '/')
+      clients.openWindow(event.notification.data.url || './')
     );
   }
 });
