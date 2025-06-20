@@ -22,8 +22,12 @@ class Dashboard {
             recentTransactions: true,
             categoryBreakdown: true,
             budgetProgress: true,
+            financialGoals: true,
             insights: true
         };
+        
+        // Load saved settings
+        this.loadSettingsFromStorage();
         
         // Initialize with default data
         this.initializeData();
@@ -70,6 +74,35 @@ class Dashboard {
             budgets: [
                 { id: '1', category: 'מזון', budget: 2000, spent: 1250, period: 'monthly' },
                 { id: '2', category: 'תחבורה', budget: 800, spent: 450, period: 'monthly' }
+            ],
+            financialGoals: [
+                { 
+                    id: '1', 
+                    name: 'חיסכון לקדמה לדירה', 
+                    targetAmount: 150000, 
+                    currentAmount: 45200, 
+                    targetDate: new Date('2024-12-31'),
+                    category: 'savings',
+                    priority: 'high'
+                },
+                { 
+                    id: '2', 
+                    name: 'חופשה במחו"ל', 
+                    targetAmount: 15000, 
+                    currentAmount: 8500, 
+                    targetDate: new Date('2024-08-15'),
+                    category: 'vacation',
+                    priority: 'medium'
+                },
+                { 
+                    id: '3', 
+                    name: 'קרן חירום', 
+                    targetAmount: 50000, 
+                    currentAmount: 22000, 
+                    targetDate: new Date('2025-06-30'),
+                    category: 'emergency',
+                    priority: 'high'
+                }
             ],
             summary: {
                 totalBalance: 60950,
@@ -128,7 +161,7 @@ class Dashboard {
         }
         
         const dashboard = document.createElement('div');
-        dashboard.className = 'dashboard';
+        dashboard.className = `dashboard layout-${this.options.layout}`;
         dashboard.innerHTML = `
             <div class="dashboard-header">
                 <div class="dashboard-title">
@@ -136,16 +169,16 @@ class Dashboard {
                     <p class="dashboard-subtitle">סקירה כללית של המצב הפיננסי שלך</p>
                 </div>
                 <div class="dashboard-actions">
+                    <button class="dashboard-settings-btn" data-action="dashboard-settings">
+                        <span class="icon">⚙️</span>
+                        <span>הגדרות לוח</span>
+                    </button>
                     ${this.renderQuickActions()}
                 </div>
             </div>
             
             <div class="dashboard-grid">
-                ${this.renderSummaryCards()}
-                ${this.renderRecentTransactions()}
-                ${this.renderCategoryBreakdown()}
-                ${this.renderBudgetProgress()}
-                ${this.renderInsights()}
+                ${this.renderConditionalSections()}
             </div>
         `;
         
@@ -158,6 +191,36 @@ class Dashboard {
         }
         
         return dashboard;
+    }
+    
+    renderConditionalSections() {
+        let sections = '';
+        
+        if (this.sections.summary) {
+            sections += `<div class="dashboard-section summary-section">${this.renderSummaryCards()}</div>`;
+        }
+        
+        if (this.sections.recentTransactions) {
+            sections += `<div class="dashboard-section recent-transactions-section">${this.renderRecentTransactions()}</div>`;
+        }
+        
+        if (this.sections.categoryBreakdown) {
+            sections += `<div class="dashboard-section category-breakdown-section">${this.renderCategoryBreakdown()}</div>`;
+        }
+        
+        if (this.sections.budgetProgress) {
+            sections += `<div class="dashboard-section budget-progress-section">${this.renderBudgetProgress()}</div>`;
+        }
+        
+        if (this.sections.financialGoals) {
+            sections += `<div class="dashboard-section financial-goals-section">${this.renderFinancialGoals()}</div>`;
+        }
+        
+        if (this.sections.insights) {
+            sections += `<div class="dashboard-section insights-section">${this.renderInsights()}</div>`;
+        }
+        
+        return sections;
     }
     
     renderLoading() {
@@ -465,6 +528,141 @@ class Dashboard {
         return insights.slice(0, 3); // Show max 3 insights
     }
     
+    renderFinancialGoals() {
+        const { financialGoals } = this.data;
+        
+        return `
+            <div class="financial-goals-section">
+                <div class="section-header">
+                    <h2>יעדים פיננסיים</h2>
+                    <button class="manage-goals-btn" data-action="manage-goals">
+                        נהל יעדים
+                    </button>
+                </div>
+                <div class="goals-list">
+                    ${financialGoals.map(goal => {
+                        const percentage = Math.round((goal.currentAmount / goal.targetAmount) * 100);
+                        const daysLeft = this.calculateDaysUntilTarget(goal.targetDate);
+                        const monthlyRequired = this.calculateMonthlyRequired(goal);
+                        
+                        return `
+                            <div class="goal-item ${goal.priority}">
+                                <div class="goal-header">
+                                    <div class="goal-info">
+                                        <h4 class="goal-name">${goal.name}</h4>
+                                        <span class="goal-category">${this.getGoalCategoryName(goal.category)}</span>
+                                    </div>
+                                    <div class="goal-amounts">
+                                        <span class="current-amount">${formatCurrency(goal.currentAmount)}</span>
+                                        <span class="target-amount">/ ${formatCurrency(goal.targetAmount)}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="goal-progress">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${Math.min(percentage, 100)}%"></div>
+                                    </div>
+                                    <span class="progress-percentage">${percentage}%</span>
+                                </div>
+                                
+                                <div class="goal-timeline">
+                                    <div class="time-left">
+                                        ${daysLeft > 0 ? 
+                                            `<span class="days-count">${daysLeft}</span> ימים נותרו` :
+                                            `<span class="overdue">פג תוקף ב-${Math.abs(daysLeft)} ימים</span>`
+                                        }
+                                    </div>
+                                    <div class="monthly-required">
+                                        ${monthlyRequired > 0 ? 
+                                            `נדרש: ${formatCurrency(monthlyRequired)}/חודש` :
+                                            `יעד הושג! 🎉`
+                                        }
+                                    </div>
+                                </div>
+                                
+                                ${this.renderGoalActions(goal)}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                ${financialGoals.length === 0 ? `
+                    <div class="empty-state">
+                        <p>לא הוגדרו יעדים פיננסיים</p>
+                        <button class="create-goal-btn" data-action="create-goal">
+                            צור יעד ראשון
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+    
+    renderGoalActions(goal) {
+        const percentage = (goal.currentAmount / goal.targetAmount) * 100;
+        
+        if (percentage >= 100) {
+            return `
+                <div class="goal-actions completed">
+                    <button class="goal-action-btn celebrate" data-action="celebrate-goal" data-goal-id="${goal.id}">
+                        🎉 יעד הושג!
+                    </button>
+                    <button class="goal-action-btn archive" data-action="archive-goal" data-goal-id="${goal.id}">
+                        העבר לארכיון
+                    </button>
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="goal-actions">
+                <button class="goal-action-btn add-money" data-action="add-to-goal" data-goal-id="${goal.id}">
+                    הוסף כסף
+                </button>
+                <button class="goal-action-btn edit" data-action="edit-goal" data-goal-id="${goal.id}">
+                    ערוך יעד
+                </button>
+                <button class="goal-action-btn details" data-action="goal-details" data-goal-id="${goal.id}">
+                    פרטים
+                </button>
+            </div>
+        `;
+    }
+    
+    // Goal helper methods
+    getGoalCategoryName(category) {
+        const categories = {
+            'savings': 'חיסכון',
+            'vacation': 'חופשה',
+            'emergency': 'חירום',
+            'education': 'חינוך',
+            'health': 'בריאות',
+            'home': 'דיור',
+            'car': 'רכב',
+            'retirement': 'פנסיה',
+            'investment': 'השקעה',
+            'other': 'אחר'
+        };
+        return categories[category] || category;
+    }
+    
+    calculateDaysUntilTarget(targetDate) {
+        const now = new Date();
+        const target = new Date(targetDate);
+        const diffTime = target - now;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+    
+    calculateMonthlyRequired(goal) {
+        const remaining = goal.targetAmount - goal.currentAmount;
+        if (remaining <= 0) return 0;
+        
+        const daysLeft = this.calculateDaysUntilTarget(goal.targetDate);
+        if (daysLeft <= 0) return 0;
+        
+        const monthsLeft = Math.max(1, daysLeft / 30);
+        return Math.ceil(remaining / monthsLeft);
+    }
+    
     // Helper methods
     getCurrentMonth() {
         const months = [
@@ -564,6 +762,9 @@ class Dashboard {
             case 'create-budget':
                 this.showCreateBudgetModal();
                 break;
+            case 'dashboard-settings':
+                this.showDashboardSettings();
+                break;
             default:
                 if (window.HebrewToasts) {
                     HebrewToasts.info(`פעולה: ${action}`, 'לוח בקרה');
@@ -608,6 +809,256 @@ class Dashboard {
     
     navigateToBudgets() {
         HebrewToasts?.info('מעבר לעמוד התקציבים - בקרוב');
+    }
+    
+    showDashboardSettings() {
+        if (!window.HebrewModals) {
+            HebrewToasts?.info('הגדרות לוח הבקרה - בקרוב');
+            return;
+        }
+        
+        const settingsModal = HebrewModals.create({
+            title: 'הגדרות לוח הבקרה',
+            size: 'medium',
+            content: this.renderDashboardSettingsForm(),
+            primaryAction: {
+                text: 'שמור הגדרות',
+                action: () => this.saveDashboardSettings()
+            },
+            secondaryAction: {
+                text: 'איפוס',
+                action: () => this.resetDashboardSettings()
+            }
+        });
+        
+        settingsModal.open();
+        this.currentSettingsModal = settingsModal;
+    }
+    
+    renderDashboardSettingsForm() {
+        return `
+            <div class="dashboard-settings-form" dir="rtl">
+                <div class="settings-section">
+                    <h3>פריסת הלוח</h3>
+                    <div class="layout-options">
+                        <label class="layout-option">
+                            <input type="radio" name="layout" value="auto" ${this.options.layout === 'auto' ? 'checked' : ''}>
+                            <span class="layout-preview">
+                                <div class="preview-grid auto"></div>
+                                <span class="layout-name">אוטומטי</span>
+                                <span class="layout-description">התאמה לגודל המסך</span>
+                            </span>
+                        </label>
+                        
+                        <label class="layout-option">
+                            <input type="radio" name="layout" value="compact" ${this.options.layout === 'compact' ? 'checked' : ''}>
+                            <span class="layout-preview">
+                                <div class="preview-grid compact"></div>
+                                <span class="layout-name">קומפקטי</span>
+                                <span class="layout-description">מידע חיוני בלבד</span>
+                            </span>
+                        </label>
+                        
+                        <label class="layout-option">
+                            <input type="radio" name="layout" value="full" ${this.options.layout === 'full' ? 'checked' : ''}>
+                            <span class="layout-preview">
+                                <div class="preview-grid full"></div>
+                                <span class="layout-name">מלא</span>
+                                <span class="layout-description">כל המידע במבט אחד</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>אזורים מוצגים</h3>
+                    <div class="section-toggles">
+                        <label class="section-toggle">
+                            <input type="checkbox" data-section="summary" ${this.sections.summary ? 'checked' : ''}>
+                            <span class="toggle-text">סיכום פיננסי</span>
+                            <span class="toggle-description">יתרה, הכנסות והוצאות</span>
+                        </label>
+                        
+                        <label class="section-toggle">
+                            <input type="checkbox" data-section="recentTransactions" ${this.sections.recentTransactions ? 'checked' : ''}>
+                            <span class="toggle-text">עסקאות אחרונות</span>
+                            <span class="toggle-description">רשימת התשלומים האחרונים</span>
+                        </label>
+                        
+                        <label class="section-toggle">
+                            <input type="checkbox" data-section="categoryBreakdown" ${this.sections.categoryBreakdown ? 'checked' : ''}>
+                            <span class="toggle-text">פילוח קטגוריות</span>
+                            <span class="toggle-description">הוצאות לפי סוגים</span>
+                        </label>
+                        
+                        <label class="section-toggle">
+                            <input type="checkbox" data-section="budgetProgress" ${this.sections.budgetProgress ? 'checked' : ''}>
+                            <span class="toggle-text">התקדמות תקציב</span>
+                            <span class="toggle-description">מעקב אחר מגבלות הוצאות</span>
+                        </label>
+                        
+                        <label class="section-toggle">
+                            <input type="checkbox" data-section="financialGoals" ${this.sections.financialGoals ? 'checked' : ''}>
+                            <span class="toggle-text">יעדים פיננסיים</span>
+                            <span class="toggle-description">מעקב אחר יעדי חיסכון</span>
+                        </label>
+                        
+                        <label class="section-toggle">
+                            <input type="checkbox" data-section="insights" ${this.sections.insights ? 'checked' : ''}>
+                            <span class="toggle-text">תובנות פיננסיות</span>
+                            <span class="toggle-description">המלצות והתראות</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>הגדרות נוספות</h3>
+                    <div class="additional-settings">
+                        <label class="setting-toggle">
+                            <input type="checkbox" data-setting="showWelcome" ${this.options.showWelcome ? 'checked' : ''}>
+                            <span class="toggle-text">הצג הודעת ברוכים הבאים</span>
+                        </label>
+                        
+                        <label class="setting-toggle">
+                            <input type="checkbox" data-setting="showTips" ${this.options.showTips ? 'checked' : ''}>
+                            <span class="toggle-text">הצג טיפים פיננסיים</span>
+                        </label>
+                        
+                        <div class="setting-field">
+                            <label for="refresh-interval">רענון אוטומטי (שניות):</label>
+                            <select id="refresh-interval" data-setting="refreshInterval">
+                                <option value="0" ${this.options.refreshInterval === 0 ? 'selected' : ''}>ללא רענון</option>
+                                <option value="30000" ${this.options.refreshInterval === 30000 ? 'selected' : ''}>30 שניות</option>
+                                <option value="60000" ${this.options.refreshInterval === 60000 ? 'selected' : ''}>דקה</option>
+                                <option value="300000" ${this.options.refreshInterval === 300000 ? 'selected' : ''}>5 דקות</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    saveDashboardSettings() {
+        if (!this.currentSettingsModal?.element) return;
+        
+        const form = this.currentSettingsModal.element.querySelector('.dashboard-settings-form');
+        
+        // Get layout setting
+        const layoutRadio = form.querySelector('input[name="layout"]:checked');
+        if (layoutRadio) {
+            this.options.layout = layoutRadio.value;
+        }
+        
+        // Get section toggles
+        const sectionToggles = form.querySelectorAll('input[data-section]');
+        sectionToggles.forEach(toggle => {
+            const section = toggle.dataset.section;
+            this.sections[section] = toggle.checked;
+        });
+        
+        // Get additional settings
+        const settingToggles = form.querySelectorAll('input[data-setting]');
+        settingToggles.forEach(toggle => {
+            const setting = toggle.dataset.setting;
+            this.options[setting] = toggle.checked;
+        });
+        
+        // Get refresh interval
+        const refreshSelect = form.querySelector('#refresh-interval');
+        if (refreshSelect) {
+            this.options.refreshInterval = parseInt(refreshSelect.value);
+        }
+        
+        // Save to localStorage
+        this.saveSettingsToStorage();
+        
+        // Re-render dashboard with new settings
+        this.applySettings();
+        
+        // Close modal
+        this.currentSettingsModal.close();
+        
+        HebrewToasts?.success('הגדרות הלוח נשמרו בהצלחה', 'לוח בקרה');
+    }
+    
+    resetDashboardSettings() {
+        // Reset to defaults
+        this.options = {
+            showWelcome: true,
+            refreshInterval: 30000,
+            showTips: true,
+            layout: 'auto'
+        };
+        
+        this.sections = {
+            summary: true,
+            quickActions: true,
+            recentTransactions: true,
+            categoryBreakdown: true,
+            budgetProgress: true,
+            insights: true
+        };
+        
+        // Clear localStorage
+        localStorage.removeItem('dashboardSettings');
+        localStorage.removeItem('dashboardSections');
+        
+        // Update form and re-render
+        this.currentSettingsModal.element.querySelector('.dashboard-settings-form').innerHTML = 
+            this.renderDashboardSettingsForm();
+        
+        HebrewToasts?.info('הגדרות הלוח אופסו לברירת המחדל', 'לוח בקרה');
+    }
+    
+    saveSettingsToStorage() {
+        try {
+            localStorage.setItem('dashboardSettings', JSON.stringify(this.options));
+            localStorage.setItem('dashboardSections', JSON.stringify(this.sections));
+        } catch (error) {
+            console.error('Error saving dashboard settings:', error);
+            HebrewToasts?.error('שגיאה בשמירת ההגדרות', 'לוח בקרה');
+        }
+    }
+    
+    loadSettingsFromStorage() {
+        try {
+            const savedSettings = localStorage.getItem('dashboardSettings');
+            const savedSections = localStorage.getItem('dashboardSections');
+            
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                this.options = { ...this.options, ...settings };
+            }
+            
+            if (savedSections) {
+                const sections = JSON.parse(savedSections);
+                this.sections = { ...this.sections, ...sections };
+            }
+        } catch (error) {
+            console.error('Error loading dashboard settings:', error);
+            // Continue with defaults
+        }
+    }
+    
+    applySettings() {
+        // Update dashboard class for layout
+        if (this.element) {
+            this.element.className = `dashboard layout-${this.options.layout}`;
+        }
+        
+        // Restart auto-refresh if needed
+        if (this.options.refreshInterval > 0) {
+            this.startAutoRefresh();
+        } else {
+            this.stopAutoRefresh();
+        }
+        
+        // Re-render dashboard with new sections
+        if (this.element && this.element.parentNode) {
+            const newElement = this.render();
+            this.element.parentNode.replaceChild(newElement, this.element);
+        }
     }
     
     async refresh() {
