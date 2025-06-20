@@ -8,7 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
 });
 
-function initializeApp() {
+async function initializeApp() {
+    // Load component library
+    await loadComponentLibrary();
+    
     // Hide loading screen and show app
     setTimeout(() => {
         const loading = document.getElementById('loading');
@@ -28,14 +31,55 @@ function initializeApp() {
     
     // Check for saved data
     checkStoredData();
+    
+    // Initialize UI components
+    initializeUIComponents();
+}
+
+async function loadComponentLibrary() {
+    const componentFiles = [
+        './src/components/Button.js',
+        './src/components/Input.js', 
+        './src/components/Navigation.js',
+        './src/components/Modal.js',
+        './src/components/Toast.js',
+        './src/components/index.js'
+    ];
+
+    try {
+        for (const file of componentFiles) {
+            await loadScript(file);
+        }
+        console.log('📦 Hebrew UI Components loaded successfully');
+    } catch (error) {
+        console.error('❌ Error loading components:', error);
+        HebrewToasts?.error('שגיאה בטעינת רכיבי ממשק המשתמש');
+    }
+}
+
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
 }
 
 function setupEventListeners() {
     // Start app button
     window.startApp = function() {
         console.log('🚀 Starting main application...');
-        // This will be expanded in future phases
-        alert('ברוכים הבאים! המערכת תהיה זמינה בקרוב.');
+        
+        // Show demo of our component library
+        if (window.ComponentUtils) {
+            showComponentDemo();
+        } else {
+            // Fallback for when components aren't loaded yet
+            HebrewToasts?.info('מערכת הרכיבים עדיין נטענת...') || 
+            alert('ברוכים הבאים! המערכת תהיה זמינה בקרוב.');
+        }
     };
     
     // Navigation clicks
@@ -44,8 +88,118 @@ function setupEventListeners() {
             e.preventDefault();
             const section = e.target.getAttribute('href').substring(1);
             console.log(`Navigating to: ${section}`);
-            // Navigation logic will be implemented in future phases
+            
+            // Show appropriate section
+            if (window.HebrewToasts) {
+                HebrewToasts.info(`ניווט אל: ${getSectionName(section)}`);
+            }
         });
+    });
+}
+
+function getSectionName(section) {
+    const sectionNames = {
+        'dashboard': 'לוח בקרה',
+        'transactions': 'עסקאות', 
+        'budget': 'תקציב',
+        'reports': 'דוחות',
+        'settings': 'הגדרות'
+    };
+    return sectionNames[section] || section;
+}
+
+function showComponentDemo() {
+    // Create and show component demo
+    const demo = ComponentUtils.createDemo();
+    
+    // Replace main content with demo
+    const mainContent = document.querySelector('.main');
+    if (mainContent) {
+        // Store original content
+        const originalContent = mainContent.innerHTML;
+        
+        // Add back button
+        const backButton = new Button({ type: 'secondary', icon: '←' })
+            .render('חזור לדף הבית', () => {
+                mainContent.innerHTML = originalContent;
+                // Re-attach event listeners
+                setupEventListeners();
+                HebrewToasts.info('חזרת לדף הבית');
+            });
+        
+        demo.insertBefore(backButton, demo.firstChild);
+        
+        // Replace content
+        mainContent.innerHTML = '';
+        mainContent.appendChild(demo);
+        
+        // Show success message
+        HebrewToasts.success('ברוכים הבאים למערכת הרכיבים החדשה!', 'מערכת רכיבים');
+    }
+}
+
+function initializeUIComponents() {
+    // Initialize global UI components after everything is loaded
+    if (typeof HebrewNavigation !== 'undefined') {
+        console.log('🎨 UI Components ready');
+        
+        // Add component demo button to header if in development
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            addDemoButton();
+        }
+        
+        // Initialize tooltips, keyboard shortcuts, etc.
+        initializeKeyboardShortcuts();
+        
+        // Show welcome toast
+        setTimeout(() => {
+            if (window.HebrewToasts) {
+                HebrewToasts.info('מערכת הרכיבים הישראלית מוכנה לשימוש!', 'מוכן');
+            }
+        }, 2000);
+    }
+}
+
+function addDemoButton() {
+    // Add a demo button to the header for development
+    const headerActions = document.querySelector('.header-content');
+    if (headerActions && window.Button) {
+        const demoBtn = new Button({ 
+            type: 'ghost', 
+            size: 'small', 
+            icon: '🎨' 
+        }).render('רכיבים', showComponentDemo);
+        
+        demoBtn.style.marginLeft = 'var(--spacing-md)';
+        headerActions.appendChild(demoBtn);
+    }
+}
+
+function initializeKeyboardShortcuts() {
+    // Add useful keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + K for quick actions
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            if (window.HebrewModals) {
+                HebrewModals.addTransaction().open();
+            }
+        }
+        
+        // Escape to close any open modals/toasts
+        if (e.key === 'Escape') {
+            if (window.HebrewToasts) {
+                HebrewToasts.clearAll();
+            }
+        }
+        
+        // Alt + N for new transaction
+        if (e.altKey && e.key === 'n') {
+            e.preventDefault();
+            if (window.HebrewToasts) {
+                HebrewToasts.info('קיצור מקלדת: Alt+N להוספת עסקה חדשה');
+            }
+        }
     });
 }
 
