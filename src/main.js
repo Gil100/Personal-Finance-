@@ -47,7 +47,11 @@ async function loadComponentLibrary() {
         './src/components/Modal.js',
         './src/components/Toast.js',
         './src/components/ThemeToggle.js',
-        './src/components/index.js'
+        './src/components/Dashboard.js',
+        './src/components/TransactionList.js',
+        './src/components/Charts.js',
+        './src/components/index.js',
+        './src/data/index.js'
     ];
 
     try {
@@ -55,6 +59,7 @@ async function loadComponentLibrary() {
             await loadScript(file);
         }
         console.log('📦 Hebrew UI Components loaded successfully');
+        console.log('💾 Data Management System loaded successfully');
     } catch (error) {
         console.error('❌ Error loading components:', error);
         HebrewToasts?.error('שגיאה בטעינת רכיבי ממשק המשתמש');
@@ -237,14 +242,46 @@ function initializeHebrewFormatting() {
     console.log('Date test:', window.formatDate(new Date()));
 }
 
-function checkStoredData() {
-    // Check if user has existing data in localStorage
-    const userData = localStorage.getItem('israeli-finance-data');
-    if (userData) {
-        console.log('📊 Found existing user data');
-        // Data loading logic will be implemented in future phases
+async function checkStoredData() {
+    // Check data system status using DataAPI
+    if (window.DataAPI) {
+        try {
+            const status = DataAPI.system.getStatus();
+            const stats = DataAPI.system.getStats();
+            
+            console.log('📊 Data System Status:', status);
+            console.log('📈 Data Stats:', stats);
+            
+            if (stats.transactions > 0 || stats.categories > 0) {
+                console.log(`💰 Found ${stats.transactions} transactions, ${stats.categories} categories`);
+                
+                // Show welcome back message
+                setTimeout(() => {
+                    if (window.HebrewToasts) {
+                        HebrewToasts.info(
+                            `ברוך שובך! יש לך ${stats.transactions} עסקאות ו-${stats.categories} קטגוריות`,
+                            'נתונים קיימים'
+                        );
+                    }
+                }, 3000);
+            } else {
+                console.log('🆕 New user - initializing default data');
+                
+                // Show welcome message for new users
+                setTimeout(() => {
+                    if (window.HebrewToasts) {
+                        HebrewToasts.success(
+                            'ברוכים הבאים! המערכת מוכנה לשימוש עם קטגוריות ישראליות',
+                            'משתמש חדש'
+                        );
+                    }
+                }, 3000);
+            }
+        } catch (error) {
+            console.error('Error checking data:', error);
+        }
     } else {
-        console.log('🆕 New user - no stored data found');
+        console.log('⏳ DataAPI not loaded yet - will check data later');
     }
 }
 

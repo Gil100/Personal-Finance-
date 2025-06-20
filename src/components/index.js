@@ -35,6 +35,9 @@ class ComponentUtils {
 
         // Demo sections
         const sections = [
+            { title: 'לוח בקרה (Dashboard)', content: ComponentUtils.createDashboardDemo() },
+            { title: 'רשימת עסקאות (Transaction List)', content: ComponentUtils.createTransactionListDemo() },
+            { title: 'תרשימים (Charts)', content: ComponentUtils.createChartsDemo() },
             { title: 'כפתורים (Buttons)', content: ComponentUtils.createButtonDemo() },
             { title: 'שדות קלט (Inputs)', content: ComponentUtils.createInputDemo() },
             { title: 'ניווט (Navigation)', content: ComponentUtils.createNavigationDemo() },
@@ -412,9 +415,628 @@ class ComponentUtils {
         
         return sum % 10 === 0;
     }
+
+    static createDashboardDemo() {
+        const container = document.createElement('div');
+        container.className = 'demo-section';
+
+        const description = document.createElement('p');
+        description.textContent = 'לוח בקרה פיננסי מקיף עם סקירה כללית של המצב הפיננסי שלך';
+        description.style.marginBottom = 'var(--spacing-lg)';
+        description.style.color = 'var(--text-secondary)';
+        container.appendChild(description);
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.flexWrap = 'wrap';
+        buttonContainer.style.gap = 'var(--spacing-md)';
+
+        const dashboardButtons = [
+            {
+                text: 'הצג לוח בקרה',
+                action: () => {
+                    if (typeof window.showDashboard === 'function') {
+                        window.showDashboard();
+                    } else {
+                        HebrewToasts?.info('לוח הבקרה יטען בקרוב...');
+                    }
+                }
+            },
+            {
+                text: 'מסך מלא',
+                action: () => {
+                    if (typeof window.showDashboardFullscreen === 'function') {
+                        window.showDashboardFullscreen();
+                    } else {
+                        HebrewToasts?.info('מסך מלא יטען בקרוב...');
+                    }
+                }
+            },
+            {
+                text: 'דמו מוטבע',
+                action: () => {
+                    ComponentUtils.showEmbeddedDashboard(buttonContainer);
+                }
+            }
+        ];
+
+        dashboardButtons.forEach(({ text, action }) => {
+            const button = new Button({ type: 'primary' }).render(text, action);
+            buttonContainer.appendChild(button);
+        });
+
+        container.appendChild(buttonContainer);
+        return container;
+    }
+
+    static showEmbeddedDashboard(parentContainer) {
+        // Check if dashboard already exists
+        const existingDashboard = parentContainer.parentNode.querySelector('.embedded-dashboard');
+        if (existingDashboard) {
+            existingDashboard.remove();
+            return;
+        }
+
+        if (typeof Dashboard === 'undefined') {
+            HebrewToasts?.error('רכיב לוח הבקרה לא נטען');
+            return;
+        }
+
+        // Create dashboard container
+        const dashboardContainer = document.createElement('div');
+        dashboardContainer.className = 'embedded-dashboard';
+        dashboardContainer.style.cssText = `
+            margin-top: var(--spacing-lg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            background: var(--bg-secondary);
+            overflow: hidden;
+        `;
+
+        // Create dashboard header
+        const header = document.createElement('div');
+        header.style.cssText = `
+            padding: var(--spacing-md);
+            background: var(--primary-gradient);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        
+        header.innerHTML = `
+            <h4 style="margin: 0;">דמו לוח בקרה מוטבע</h4>
+            <button onclick="this.closest('.embedded-dashboard').remove()" 
+                    style="background: rgba(255,255,255,0.2); border: none; color: white; 
+                           padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer;">
+                ✕ סגור
+            </button>
+        `;
+
+        // Create dashboard
+        const dashboard = new Dashboard({
+            showWelcome: false,
+            refreshInterval: 0
+        });
+
+        const dashboardElement = dashboard.render();
+        
+        // Scale down for embedded view
+        dashboardElement.style.transform = 'scale(0.8)';
+        dashboardElement.style.transformOrigin = 'top center';
+        dashboardElement.style.padding = 'var(--spacing-md)';
+
+        dashboardContainer.appendChild(header);
+        dashboardContainer.appendChild(dashboardElement);
+        
+        // Insert after the button container
+        parentContainer.parentNode.insertBefore(dashboardContainer, parentContainer.nextSibling);
+        
+        HebrewToasts?.success('דמו לוח בקרה מוטבע נטען', 'ברוכים הבאים');
+    }
+
+    static createTransactionListDemo() {
+        const container = document.createElement('div');
+        container.className = 'demo-section';
+
+        const description = document.createElement('p');
+        description.textContent = 'רשימת עסקאות מתקדמת עם חיפוש, מסננים וגלילה אינסופית';
+        description.style.marginBottom = 'var(--spacing-lg)';
+        description.style.color = 'var(--text-secondary)';
+        container.appendChild(description);
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.flexWrap = 'wrap';
+        buttonContainer.style.gap = 'var(--spacing-md)';
+
+        const transactionListButtons = [
+            {
+                text: 'רשימה מלאה',
+                action: () => {
+                    if (typeof window.showTransactionList === 'function') {
+                        window.showTransactionList();
+                    } else {
+                        ComponentUtils.showEmbeddedTransactionList(buttonContainer, 'full');
+                    }
+                }
+            },
+            {
+                text: 'רשימה קומפקטית',
+                action: () => {
+                    ComponentUtils.showEmbeddedTransactionList(buttonContainer, 'compact');
+                }
+            },
+            {
+                text: 'רק עם מסננים',
+                action: () => {
+                    ComponentUtils.showEmbeddedTransactionList(buttonContainer, 'filters-only');
+                }
+            }
+        ];
+
+        transactionListButtons.forEach(({ text, action }) => {
+            const button = new Button({ type: 'primary' }).render(text, action);
+            buttonContainer.appendChild(button);
+        });
+
+        container.appendChild(buttonContainer);
+        return container;
+    }
+
+    static showEmbeddedTransactionList(parentContainer, mode = 'full') {
+        // Check if transaction list already exists
+        const existingList = parentContainer.parentNode.querySelector('.embedded-transaction-list');
+        if (existingList) {
+            existingList.remove();
+            return;
+        }
+
+        if (typeof TransactionList === 'undefined') {
+            HebrewToasts?.error('רכיב רשימת העסקאות לא נטען');
+            return;
+        }
+
+        // Create transaction list container
+        const listContainer = document.createElement('div');
+        listContainer.className = 'embedded-transaction-list';
+        listContainer.style.cssText = `
+            margin-top: var(--spacing-lg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            background: var(--bg-secondary);
+            overflow: hidden;
+        `;
+
+        // Create header
+        const header = document.createElement('div');
+        header.style.cssText = `
+            padding: var(--spacing-md);
+            background: var(--primary-gradient);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        
+        const modeTitle = {
+            'full': 'רשימת עסקאות מלאה',
+            'compact': 'רשימה קומפקטית',
+            'filters-only': 'רשימה עם מסננים בלבד'
+        };
+        
+        header.innerHTML = `
+            <h4 style="margin: 0;">${modeTitle[mode] || 'רשימת עסקאות'}</h4>
+            <button onclick="this.closest('.embedded-transaction-list').remove()" 
+                    style="background: rgba(255,255,255,0.2); border: none; color: white; 
+                           padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer;">
+                ✕ סגור
+            </button>
+        `;
+
+        // Configure options based on mode
+        const options = {
+            full: {
+                pageSize: 15,
+                enableInfiniteScroll: true,
+                enableSearch: true,
+                enableFilters: true,
+                enableSort: true,
+                showBalance: true,
+                showDateGroups: true
+            },
+            compact: {
+                pageSize: 10,
+                enableInfiniteScroll: false,
+                enableSearch: false,
+                enableFilters: false,
+                enableSort: false,
+                showBalance: false,
+                showDateGroups: false
+            },
+            'filters-only': {
+                pageSize: 8,
+                enableInfiniteScroll: false,
+                enableSearch: true,
+                enableFilters: true,
+                enableSort: true,
+                showBalance: false,
+                showDateGroups: false
+            }
+        };
+
+        // Create transaction list
+        const transactionList = new TransactionList(options[mode] || options.full);
+        const listElement = transactionList.render();
+        
+        // Scale down for embedded view
+        listElement.style.transform = 'scale(0.9)';
+        listElement.style.transformOrigin = 'top center';
+        listElement.style.maxHeight = '400px';
+        listElement.style.overflow = 'hidden';
+
+        listContainer.appendChild(header);
+        listContainer.appendChild(listElement);
+        
+        // Insert after the button container
+        parentContainer.parentNode.insertBefore(listContainer, parentContainer.nextSibling);
+        
+        HebrewToasts?.success(`רשימת עסקאות (${modeTitle[mode]}) נטענה`, 'ברוכים הבאים');
+    }
+
+    static createChartsDemo() {
+        const container = document.createElement('div');
+        container.className = 'demo-section';
+
+        const description = document.createElement('p');
+        description.textContent = 'תרשימים פיננסיים מתקדמים עם אנימציות והתאמה לעברית';
+        description.style.marginBottom = 'var(--spacing-lg)';
+        description.style.color = 'var(--text-secondary)';
+        container.appendChild(description);
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.flexWrap = 'wrap';
+        buttonContainer.style.gap = 'var(--spacing-md)';
+
+        const chartButtons = [
+            {
+                text: 'תרשים עוגה',
+                action: () => {
+                    ComponentUtils.showEmbeddedChart(buttonContainer, 'pie');
+                }
+            },
+            {
+                text: 'תרשים עמודות',
+                action: () => {
+                    ComponentUtils.showEmbeddedChart(buttonContainer, 'bar');
+                }
+            },
+            {
+                text: 'תרשים קווים',
+                action: () => {
+                    ComponentUtils.showEmbeddedChart(buttonContainer, 'line');
+                }
+            },
+            {
+                text: 'כל התרשימים',
+                action: () => {
+                    ComponentUtils.showEmbeddedChart(buttonContainer, 'all');
+                }
+            }
+        ];
+
+        chartButtons.forEach(({ text, action }) => {
+            const button = new Button({ type: 'primary' }).render(text, action);
+            buttonContainer.appendChild(button);
+        });
+
+        container.appendChild(buttonContainer);
+        return container;
+    }
+
+    static showEmbeddedChart(parentContainer, type = 'pie') {
+        // Check if chart already exists
+        const existingChart = parentContainer.parentNode.querySelector('.embedded-charts');
+        if (existingChart) {
+            existingChart.remove();
+            return;
+        }
+
+        if (typeof Charts === 'undefined') {
+            HebrewToasts?.error('רכיב התרשימים לא נטען');
+            return;
+        }
+
+        // Create charts container
+        const chartsContainer = document.createElement('div');
+        chartsContainer.className = 'embedded-charts';
+        chartsContainer.style.cssText = `
+            margin-top: var(--spacing-lg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            background: var(--bg-secondary);
+            overflow: hidden;
+        `;
+
+        // Create header
+        const header = document.createElement('div');
+        header.style.cssText = `
+            padding: var(--spacing-md);
+            background: var(--primary-gradient);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        
+        const chartTitles = {
+            'pie': 'תרשים עוגה - פילוח קטגוריות',
+            'bar': 'תרשים עמודות - הוצאות חודשיות',
+            'line': 'תרשים קווים - מגמות פיננסיות',
+            'all': 'כל התרשימים הפיננסיים'
+        };
+        
+        header.innerHTML = `
+            <h4 style="margin: 0;">${chartTitles[type] || 'תרשימים פיננסיים'}</h4>
+            <button onclick="this.closest('.embedded-charts').remove()" 
+                    style="background: rgba(255,255,255,0.2); border: none; color: white; 
+                           padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer;">
+                ✕ סגור
+            </button>
+        `;
+
+        // Create charts content
+        const content = document.createElement('div');
+        content.style.cssText = `
+            padding: var(--spacing-md);
+            max-height: 500px;
+            overflow-y: auto;
+        `;
+
+        const charts = new Charts({ width: 350, height: 250 });
+
+        if (type === 'all') {
+            // Create all chart types
+            const chartsGrid = document.createElement('div');
+            chartsGrid.className = 'charts-grid';
+            chartsGrid.style.cssText = `
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            `;
+
+            // Pie chart
+            const pieChart = charts.createPieChart(Charts.getSampleCategoryData(), 'embedded-pie');
+            chartsGrid.appendChild(pieChart);
+
+            // Bar chart
+            const barChart = charts.createBarChart(Charts.getSampleMonthlyData(), 'embedded-bar');
+            chartsGrid.appendChild(barChart);
+
+            // Line chart
+            const lineChart = charts.createLineChart(Charts.getSampleTrendData(), 'embedded-line');
+            chartsGrid.appendChild(lineChart);
+
+            content.appendChild(chartsGrid);
+        } else {
+            // Create specific chart type
+            let chart;
+            switch (type) {
+                case 'pie':
+                    chart = charts.createPieChart(Charts.getSampleCategoryData(), `embedded-${type}`);
+                    break;
+                case 'bar':
+                    chart = charts.createBarChart(Charts.getSampleMonthlyData(), `embedded-${type}`);
+                    break;
+                case 'line':
+                    chart = charts.createLineChart(Charts.getSampleTrendData(), `embedded-${type}`);
+                    break;
+            }
+            
+            if (chart) {
+                content.appendChild(chart);
+            }
+        }
+
+        chartsContainer.appendChild(header);
+        chartsContainer.appendChild(content);
+        
+        // Insert after the button container
+        parentContainer.parentNode.insertBefore(chartsContainer, parentContainer.nextSibling);
+        
+        HebrewToasts?.success(`תרשים ${chartTitles[type]} נטען בהצלחה`, 'ברוכים הבאים');
+    }
 }
 
 // Make ComponentUtils available globally
 if (typeof window !== 'undefined') {
     window.ComponentUtils = ComponentUtils;
 }
+
+// Dashboard integration functions
+window.showDashboard = function() {
+    const main = document.querySelector('.main');
+    if (!main) {
+        console.error('Main container not found');
+        HebrewToasts?.error('לא נמצא מיכל ראשי בעמוד');
+        return;
+    }
+    
+    if (typeof Dashboard === 'undefined') {
+        console.error('Dashboard component not loaded');
+        HebrewToasts?.error('רכיב לוח הבקרה לא נטען');
+        return;
+    }
+    
+    // Create dashboard instance
+    const dashboard = new Dashboard({
+        showWelcome: true,
+        refreshInterval: 30000
+    });
+    
+    // Render dashboard
+    const dashboardElement = dashboard.render();
+    
+    // Replace main content
+    main.innerHTML = '';
+    main.appendChild(dashboardElement);
+    
+    // Show success message
+    if (window.HebrewToasts) {
+        HebrewToasts.success('לוח הבקרה נטען בהצלחה', 'ברוכים הבאים');
+    }
+    
+    console.log('📊 Dashboard loaded and displayed');
+    return dashboard;
+};
+
+window.showDashboardFullscreen = function() {
+    if (typeof Dashboard === 'undefined') {
+        console.error('Dashboard component not loaded');
+        HebrewToasts?.error('רכיב לוח הבקרה לא נטען');
+        return;
+    }
+    
+    // Create fullscreen dashboard overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'dashboard-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--bg-primary);
+        z-index: 9999;
+        overflow-y: auto;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    // Add CSS for fade in animation
+    if (!document.querySelector('#dashboard-animations')) {
+        const style = document.createElement('style');
+        style.id = 'dashboard-animations';
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Create dashboard
+    const dashboard = new Dashboard({
+        showWelcome: true,
+        refreshInterval: 0 // Don't auto-refresh in demo
+    });
+    
+    const dashboardElement = dashboard.render();
+    
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = '✕ סגור';
+    closeButton.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 10000;
+        background: var(--error-color);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-weight: 500;
+        box-shadow: var(--shadow-lg);
+        transition: all 0.2s ease;
+    `;
+    
+    closeButton.onmouseover = () => {
+        closeButton.style.transform = 'scale(1.05)';
+        closeButton.style.boxShadow = 'var(--shadow-xl)';
+    };
+    
+    closeButton.onmouseout = () => {
+        closeButton.style.transform = 'scale(1)';
+        closeButton.style.boxShadow = 'var(--shadow-lg)';
+    };
+    
+    closeButton.onclick = () => {
+        overlay.style.animation = 'fadeOut 0.3s ease';
+        if (!document.querySelector('#dashboard-fadeout')) {
+            const style = document.createElement('style');
+            style.id = 'dashboard-fadeout';
+            style.textContent = `
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        setTimeout(() => {
+            if (document.body.contains(overlay)) {
+                document.body.removeChild(overlay);
+            }
+        }, 300);
+        
+        HebrewToasts?.info('לוח הבקרה נסגר');
+    };
+    
+    overlay.appendChild(dashboardElement);
+    overlay.appendChild(closeButton);
+    document.body.appendChild(overlay);
+    
+    HebrewToasts?.success('לוח בקרה במסך מלא', 'ברוכים הבאים');
+    
+    console.log('📊 Dashboard fullscreen mode activated');
+};
+
+console.log('📊 Dashboard integration loaded');
+
+// Transaction List integration functions  
+window.showTransactionList = function() {
+    const main = document.querySelector('.main');
+    if (!main) {
+        console.error('Main container not found');
+        HebrewToasts?.error('לא נמצא מיכל ראשי בעמוד');
+        return;
+    }
+    
+    if (typeof TransactionList === 'undefined') {
+        console.error('TransactionList component not loaded');
+        HebrewToasts?.error('רכיב רשימת העסקאות לא נטען');
+        return;
+    }
+    
+    // Create transaction list instance
+    const transactionList = new TransactionList({
+        pageSize: 20,
+        enableInfiniteScroll: true,
+        enableSearch: true,
+        enableFilters: true,
+        enableSort: true,
+        showBalance: true,
+        showDateGroups: true
+    });
+    
+    // Render transaction list
+    const listElement = transactionList.render();
+    
+    // Replace main content
+    main.innerHTML = '';
+    main.appendChild(listElement);
+    
+    // Show success message
+    if (window.HebrewToasts) {
+        HebrewToasts.success('רשימת העסקאות נטענה בהצלחה', 'ברוכים הבאים');
+    }
+    
+    console.log('📋 Transaction list loaded and displayed');
+    return transactionList;
+};
+
+console.log('📋 TransactionList integration loaded');
