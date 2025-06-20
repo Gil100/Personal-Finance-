@@ -1,0 +1,39 @@
+{
+  "logLevel": "debug",
+  "servers": {
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli",
+        "run",
+        "@smithery-ai/github",
+        "--key",
+        "30a9cc1b-e09e-4120-be7f-2567f24d59fa",
+        "--profile",
+        "secondary-marmot-2sbYQ1"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli",
+        "run",
+        "@upstash/context7"
+      ]
+    },
+    "playwright-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@cloudflare/playwright-mcp",
+        "--key",
+        "30a9cc1b-e09e-4120-be7f-2567f24d59fa"
+      ]
+    }
+  }
+}
+
