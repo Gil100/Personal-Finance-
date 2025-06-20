@@ -211,6 +211,40 @@ export class DataExporter {
           }));
           break;
           
+        case 'mizrahi':
+          // Mizrahi Tefahot format
+          csvData = transactions.map(txn => ({
+            'תאריך פעולה': this.formatDateISR(txn.תאריך),
+            'תיאור פעולה': txn.תיאור,
+            'סכום זכות': txn.סכום > 0 ? txn.סכום : '',
+            'סכום חובה': txn.סכום < 0 ? Math.abs(txn.סכום) : '',
+            'יתרה': '',
+            'הערות': txn.הערות || ''
+          }));
+          break;
+          
+        case 'discount':
+          // Bank Discount format
+          csvData = transactions.map(txn => ({
+            'תאריך': this.formatDateISR(txn.תאריך),
+            'פרטי פעולה': txn.תיאור,
+            'זכות/חובה': txn.סכום > 0 ? 'זכות' : 'חובה',
+            'סכום': Math.abs(txn.סכום),
+            'קטגוריה': categoryMap[txn.קטגוריה] || ''
+          }));
+          break;
+          
+        case 'fibi':
+          // First International Bank (FIBI) format
+          csvData = transactions.map(txn => ({
+            'תאריך ביצוע': this.formatDateISR(txn.תאריך),
+            'תיאור': txn.תיאור,
+            'סכום': txn.סכום,
+            'סוג תנועה': txn.סכום > 0 ? 'זכות' : 'חובה',
+            'קטגוריה': categoryMap[txn.קטגוריה] || ''
+          }));
+          break;
+          
         default:
           // Generic Israeli bank format
           csvData = transactions.map(txn => ({
@@ -473,12 +507,29 @@ export class DataImporter {
   // Map CSV row to transaction object
   static mapCSVToTransaction(rowData, categoryMap, accountMap) {
     try {
-      // Try different possible field mappings
-      const dateFields = ['תאריך', 'date', 'תאריך פעולה', 'תאריך ערך'];
-      const descFields = ['תיאור', 'description', 'פרטי הפעולה', 'תיאור הפעולה'];
-      const amountFields = ['סכום', 'amount', 'זכות', 'חובה'];
-      const categoryFields = ['קטגוריה', 'category'];
-      const accountFields = ['חשבון', 'account'];
+      // Try different possible field mappings for Israeli banks
+      const dateFields = [
+        'תאריך', 'date', 'תאריך פעולה', 'תאריך ערך', 'תאריך ביצוע',
+        'Date', 'Transaction Date', 'Value Date', 'Execution Date'
+      ];
+      
+      const descFields = [
+        'תיאור', 'description', 'פרטי הפעולה', 'תיאור הפעולה', 'תיאור פעולה', 'פרטי פעולה',
+        'Description', 'Transaction Description', 'Details', 'Particulars'
+      ];
+      
+      const amountFields = [
+        'סכום', 'amount', 'זכות', 'חובה', 'סכום זכות', 'סכום חובה',
+        'Amount', 'Credit', 'Debit', 'Credit Amount', 'Debit Amount'
+      ];
+      
+      const categoryFields = [
+        'קטגוריה', 'category', 'Category', 'Type', 'סוג'
+      ];
+      
+      const accountFields = [
+        'חשבון', 'account', 'Account', 'מספר חשבון', 'Account Number'
+      ];
       
       const transaction = {
         תאריך: this.findFieldValue(rowData, dateFields),
@@ -544,21 +595,61 @@ export class DataImporter {
   }
   
   static parseAmount(rowData, amountFields) {
-    // Try to find amount in different fields
+    // Check for separate credit/debit columns first
+    const creditFields = ['זכות', 'סכום זכות', 'Credit', 'Credit Amount'];
+    const debitFields = ['חובה', 'סכום חובה', 'Debit', 'Debit Amount'];
+    
+    let creditAmount = 0;
+    let debitAmount = 0;
+    
+    // Parse credit amount
+    for (const field of creditFields) {
+      if (rowData[field] !== undefined && rowData[field] !== '') {
+        const amount = parseFloat(rowData[field].toString().replace(/[^\d.-]/g, ''));
+        if (!isNaN(amount) && amount > 0) {
+          creditAmount = amount;
+          break;
+        }
+      }
+    }
+    
+    // Parse debit amount
+    for (const field of debitFields) {
+      if (rowData[field] !== undefined && rowData[field] !== '') {
+        const amount = parseFloat(rowData[field].toString().replace(/[^\d.-]/g, ''));
+        if (!isNaN(amount) && amount > 0) {
+          debitAmount = -Math.abs(amount);
+          break;
+        }
+      }
+    }
+    
+    // If we found credit or debit, return it
+    if (creditAmount > 0) return creditAmount;
+    if (debitAmount < 0) return debitAmount;
+    
+    // Fallback: try to find amount in single amount field
     for (const field of amountFields) {
       if (rowData[field] !== undefined && rowData[field] !== '') {
         let amount = parseFloat(rowData[field].toString().replace(/[^\d.-]/g, ''));
         
-        // Handle debit/credit columns
-        if (field === 'חובה' && !isNaN(amount)) {
-          amount = -Math.abs(amount);
-        }
-        
+        // Handle some Israeli bank specific conventions
         if (!isNaN(amount)) {
+          // Check if transaction type is indicated elsewhere
+          const transactionType = rowData['זכות/חובה'] || rowData['סוג תנועה'] || rowData['סוג פעולה'];
+          if (transactionType) {
+            if (transactionType.includes('חובה') || transactionType.includes('Debit')) {
+              amount = -Math.abs(amount);
+            } else if (transactionType.includes('זכות') || transactionType.includes('Credit')) {
+              amount = Math.abs(amount);
+            }
+          }
+          
           return amount;
         }
       }
     }
+    
     return 0;
   }
   
@@ -591,7 +682,7 @@ export const DataBackup = {
   // Supported formats
   supportedFormats: {
     export: ['json', 'csv'],
-    bankFormats: ['generic', 'hapoalim', 'leumi', 'mizrahi'],
+    bankFormats: ['generic', 'hapoalim', 'leumi', 'mizrahi', 'discount', 'fibi'],
     import: ['json', 'csv']
   }
 };

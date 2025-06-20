@@ -41,6 +41,9 @@ async function initializeApp() {
 
 async function loadComponentLibrary() {
     const componentFiles = [
+        './src/utils/israeli-formatting.js',
+        './src/utils/israeli-salary-calculator.js',
+        './src/utils/hebrew-financial-terms.js',
         './src/components/Button.js',
         './src/components/Input.js', 
         './src/components/Navigation.js',
@@ -213,33 +216,85 @@ function initializeKeyboardShortcuts() {
 }
 
 function initializeHebrewFormatting() {
-    // Hebrew/Israeli number formatting utilities
-    window.formatCurrency = function(amount) {
-        return new Intl.NumberFormat('he-IL', {
-            style: 'currency',
-            currency: 'ILS',
-            currencyDisplay: 'symbol'
-        }).format(amount);
-    };
+    // Enhanced Hebrew/Israeli formatting utilities are loaded via israeli-formatting.js
+    console.log('🔤 Enhanced Hebrew formatting initialized');
     
-    window.formatNumber = function(number) {
-        return new Intl.NumberFormat('he-IL').format(number);
-    };
-    
-    window.formatDate = function(date) {
-        return new Intl.DateTimeFormat('he-IL', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        }).format(date);
-    };
-    
-    console.log('🔤 Hebrew formatting initialized');
-    
-    // Test formatting
-    console.log('Currency test:', window.formatCurrency(1234.56));
-    console.log('Number test:', window.formatNumber(1234567));
-    console.log('Date test:', window.formatDate(new Date()));
+    // Test enhanced formatting
+    if (window.israeliFormatter) {
+        console.log('✅ Israeli Formatter loaded successfully');
+        
+        // Test currency formatting
+        console.log('Currency test (basic):', formatCurrency(1234.56));
+        console.log('Currency test (compact):', formatCurrency(1500000, { compact: true }));
+        console.log('Currency test (no symbol):', formatCurrency(999.99, { showSymbol: false }));
+        
+        // Test number formatting
+        console.log('Number test (basic):', formatNumber(1234567));
+        console.log('Number test (compact):', formatNumber(2500000, { compact: true }));
+        
+        // Test date formatting
+        console.log('Date test (medium):', formatDate(new Date()));
+        console.log('Date test (long):', formatDate(new Date(), { style: 'long' }));
+        
+        // Test Israeli-specific formatting
+        console.log('Tax year test:', formatTaxYear());
+        console.log('Phone test:', formatPhoneNumber('0523456789'));
+        console.log('ID test:', formatIsraeliId('123456789'));
+        console.log('Percentage test:', formatPercentage(15.5));
+        
+        // Display current tax year info
+        const taxYear = getTaxYearPeriod();
+        console.log('📅 Current tax year:', taxYear.label);
+        console.log('📅 Tax year period:', formatDate(taxYear.start) + ' - ' + formatDate(taxYear.end));
+        
+        // Test salary calculator
+        if (window.salaryCalculator) {
+            console.log('💰 Testing Israeli Salary Calculator...');
+            const testSalary = calculateMonthlySalary(15000, { children: 2 });
+            console.log('💼 Salary test (₪15,000 gross, 2 children):');
+            console.log('  📊 Net salary:', formatCurrency(testSalary.net));
+            console.log('  🏛️ Total taxes:', formatCurrency(testSalary.totalTaxes));
+            console.log('  📈 Effective rate:', testSalary.effectiveTaxRate.toFixed(1) + '%');
+        }
+        
+        // Test Hebrew financial terms
+        if (window.hebrewTerms) {
+            console.log('🔤 Testing Hebrew Financial Terms...');
+            console.log('💰 Income:', getTerm('income'));
+            console.log('💸 Expense:', getTerm('expense'));
+            console.log('🏦 Bank:', getTerm('bank'));
+            console.log('📊 Budget:', getTerm('budget'));
+            console.log('✅ Success phrase:', getSuccess('saved'));
+        }
+    } else {
+        console.warn('⚠️ Israeli Formatter not loaded - using basic formatting');
+        
+        // Fallback basic formatting
+        window.formatCurrency = function(amount) {
+            return new Intl.NumberFormat('he-IL', {
+                style: 'currency',
+                currency: 'ILS',
+                currencyDisplay: 'symbol'
+            }).format(amount);
+        };
+        
+        window.formatNumber = function(number) {
+            return new Intl.NumberFormat('he-IL').format(number);
+        };
+        
+        window.formatDate = function(date) {
+            return new Intl.DateTimeFormat('he-IL', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }).format(date);
+        };
+        
+        // Basic tests
+        console.log('Currency test:', formatCurrency(1234.56));
+        console.log('Number test:', formatNumber(1234567));
+        console.log('Date test:', formatDate(new Date()));
+    }
 }
 
 async function checkStoredData() {
