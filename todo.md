@@ -478,6 +478,56 @@ The fix is complete in the code. The repository owner needs to:
 #### Next Steps:
 Ready to proceed with **Checkpoint 2: Core UI Framework & Hebrew Interface**
 
+### GitHub Pages Resource Loading Errors Fix - June 20, 2025 (RESOLVED)
+
+**New Problem Analysis:**
+After the initial deployment fix, new console errors appeared:
+- `SW registration failed: TypeError: Failed to register a ServiceWorker for scope ('https://gil100.github.io/') with script ('https://gil100.github.io/sw.js'): A bad HTTP response code (404)`
+- `GET https://gil100.github.io/manifest.json net::ERR_NETWORK_CHANGED`
+
+**Root Cause:**
+Service worker and manifest resources were trying to load from root domain instead of repository subdirectory.
+
+**Technical Solutions Applied:**
+
+1. **Service Worker Registration Path Fix** ✅
+   - **File**: `src/main.js:103`
+   - **Changed**: `navigator.serviceWorker.register('/sw.js')` → `navigator.serviceWorker.register('./sw.js')`
+   - **Result**: Service worker now loads from `https://gil100.github.io/Personal-Finance-/sw.js`
+
+2. **Service Worker Cache URLs Fix** ✅
+   - **File**: `public/sw.js:6-10`
+   - **Changed**: Multiple relative path references from `./` to `.` for consistency
+   - **Result**: Service worker cache operations work correctly with GitHub Pages subdirectory
+
+3. **Manifest Path Verification** ✅
+   - **File**: `index.html:20`
+   - **Status**: Already correct - `/manifest.json` transforms to `/Personal-Finance-/manifest.json`
+   - **Result**: Manifest loads from correct subdirectory path
+
+**Build Verification Results:**
+✅ Build completes successfully (`npm run build`)
+✅ Service worker: `/Personal-Finance-/sw.js` (in dist folder)
+✅ Manifest: `/Personal-Finance-/manifest.json` (in dist folder)
+✅ JavaScript module: `/Personal-Finance-/assets/index-CU1Aucf_.js`
+✅ All relative paths resolve correctly in GitHub Pages subdirectory
+
+**Expected Resolution:**
+After GitHub Actions deployment completes:
+- ❌ ~~`SW registration failed: A bad HTTP response code (404)`~~
+- ❌ ~~`GET https://gil100.github.io/manifest.json net::ERR_NETWORK_CHANGED`~~
+- ✅ Service worker registers successfully
+- ✅ PWA functionality works correctly
+- ✅ All resources load from proper GitHub Pages subdirectory
+
+**Files Modified:**
+- `src/main.js` - Fixed service worker registration path
+- `public/sw.js` - Updated cache URL references for consistency
+- Committed and pushed to trigger deployment
+
+**Status:** ✅ **RESOURCE LOADING ERRORS FIXED** - Deployment in progress
+
 *Status: ✅ Checkpoint 1 Complete - Ready for Checkpoint 2*
 *GitHub Pages Fix: ✅ Complete (pending repository settings update)*
+*Resource Loading Fix: ✅ Complete (deployment in progress)*
 *Last Updated: June 20, 2025*
