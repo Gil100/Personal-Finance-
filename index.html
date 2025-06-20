@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>לוח מעקב פיננסי אישי - מהדורה ישראלית</title>
+    <meta name="description" content="מעקב פיננסי אישי מתקדם המותאם לשוק הישראלי - תמיכה בעברית, שקלים ובנקים ישראליים">
+    
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Hebrew fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&family=Assistant:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/Personal-Finance-/manifest.json">
+    
+    <!-- Theme color -->
+    <meta name="theme-color" content="#2563eb">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="לוח מעקב פיננסי אישי - מהדורה ישראלית">
+    <meta property="og:description" content="מעקב פיננסי אישי מתקדם המותאם לשוק הישראלי">
+    <meta property="og:type" content="website">
+    
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Assistant', 'Rubik', Arial, sans-serif;
+            direction: rtl;
+            text-align: right;
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+        
+        /* Loading screen */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-left: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Main app container */
+        #app {
+            min-height: 100vh;
+            display: none;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo::before {
+            content: "₪";
+            margin-left: 0.5rem;
+            font-size: 1.8rem;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+        
+        .nav a:hover {
+            opacity: 0.8;
+        }
+        
+        /* Main content */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .welcome-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .welcome-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+        
+        .welcome-subtitle {
+            font-size: 1.1rem;
+            color: #64748b;
+            margin-bottom: 2rem;
+        }
+        
+        .cta-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Features grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-description {
+            color: #64748b;
+            line-height: 1.5;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .nav {
+                gap: 1rem;
+            }
+            
+            .welcome-title {
+                font-size: 1.5rem;
+            }
+            
+            .main {
+                padding: 1rem;
+            }
+        }
+    </style>
+  <script type="module" crossorigin src="/Personal-Finance-/assets/index-CdsvlR4V.js"></script>
+  <link rel="stylesheet" crossorigin href="/Personal-Finance-/assets/index-CWGKtB19.css">
+</head>
+<body>
+    <!-- Loading screen -->
+    <div class="loading" id="loading">
+        <div>טוען...</div>
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Main app -->
+    <div id="app">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">לוח מעקב פיננסי</div>
+                <nav class="nav">
+                    <a href="#dashboard">לוח בקרה</a>
+                    <a href="#transactions">עסקאות</a>
+                    <a href="#budget">תקציב</a>
+                    <a href="#reports">דוחות</a>
+                    <a href="#settings">הגדרות</a>
+                </nav>
+            </div>
+        </header>
+        
+        <main class="main">
+            <div class="welcome-card">
+                <h1 class="welcome-title">ברוכים הבאים ללוח המעקב הפיננסי שלכם</h1>
+                <p class="welcome-subtitle">
+                    מערכת מתקדמת לניהול כספים אישיים המותאמת במיוחד לשוק הישראלי
+                    <br>
+                    תמיכה מלאה בעברית, שקלים ובנקים ישראליים
+                </p>
+                <button class="cta-button" onclick="startApp()">
+                    התחל עכשיו
+                </button>
+            </div>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3 class="feature-title">מעקב הוצאות והכנסות</h3>
+                    <p class="feature-description">
+                        תיעוד מדויק של כל העסקאות שלכם עם קטגוריות מותאמות לשוק הישראלי
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">תקציב חכם</h3>
+                    <p class="feature-description">
+                        יצירת תקציבים מותאמים אישית עם התראות וניתוח מגמות
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🏦</div>
+                    <h3 class="feature-title">התחברות לבנקים</h3>
+                    <p class="feature-description">
+                        תמיכה בבנקים הישראליים הגדולים לייבוא נתונים אוטומטי
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3 class="feature-title">דוחות מתקדמים</h3>
+                    <p class="feature-description">
+                        ניתוח פיננסי מעמיק עם גרפים וסטטיסטיקות מותאמות לשוק הישראלי
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3 class="feature-title">אבטחה מקסימלית</h3>
+                    <p class="feature-description">
+                        הצפנה מתקדמת ואחסון מקומי בטוח לשמירה על פרטיותכם
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3 class="feature-title">נגישות מלאה</h3>
+                    <p class="feature-description">
+                        ממשק משתמש מותאם לעברית עם תמיכה מלאה בכל המכשירים
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+</body>
+</html>
