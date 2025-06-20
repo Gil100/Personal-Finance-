@@ -34,6 +34,9 @@ async function initializeApp() {
     
     // Initialize UI components
     initializeUIComponents();
+    
+    // Initialize theme system
+    initializeThemeSystem();
 }
 
 async function loadComponentLibrary() {
@@ -43,6 +46,7 @@ async function loadComponentLibrary() {
         './src/components/Navigation.js',
         './src/components/Modal.js',
         './src/components/Toast.js',
+        './src/components/ThemeToggle.js',
         './src/components/index.js'
     ];
 
@@ -241,6 +245,62 @@ function checkStoredData() {
         // Data loading logic will be implemented in future phases
     } else {
         console.log('🆕 New user - no stored data found');
+    }
+}
+
+function initializeThemeSystem() {
+    // Initialize theme system with Hebrew support
+    if (typeof ThemeToggle !== 'undefined') {
+        console.log('🎨 Initializing theme system...');
+        
+        // Create theme toggle instance
+        const themeToggle = new ThemeToggle({
+            showLabel: true,
+            position: 'top-right'
+        });
+        
+        // Add to navigation or header
+        const headerActions = document.querySelector('.header-content');
+        if (headerActions) {
+            const toggleContainer = document.createElement('div');
+            toggleContainer.className = 'theme-toggle-container';
+            toggleContainer.style.marginLeft = 'var(--spacing-md)';
+            
+            // Create toggle button HTML
+            toggleContainer.innerHTML = themeToggle.getHTML();
+            headerActions.appendChild(toggleContainer);
+            
+            // Set up click handler
+            const toggleButton = toggleContainer.querySelector('.theme-toggle');
+            if (toggleButton) {
+                toggleButton.addEventListener('click', () => {
+                    themeToggle.toggleTheme();
+                });
+            }
+        } else {
+            // Fallback: add as fixed position toggle
+            document.body.appendChild(themeToggle.render());
+            themeToggle.toggleButton.classList.add('theme-toggle-fixed', 'theme-toggle-top-right');
+        }
+        
+        // Listen for theme changes
+        document.addEventListener('themeChanged', (e) => {
+            console.log('🌓 Theme changed to:', e.detail.theme);
+            
+            // Show theme change notification
+            if (window.HebrewToasts) {
+                const message = e.detail.theme === 'dark' ? 'עברת למצב לילה' : 'עברת למצב יום';
+                HebrewToasts.info(message, 'שינוי נושא');
+            }
+        });
+        
+        // Apply saved theme on startup
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        
+        console.log('✅ Theme system initialized');
+    } else {
+        console.warn('⚠️ ThemeToggle component not loaded');
     }
 }
 

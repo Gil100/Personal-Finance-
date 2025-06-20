@@ -8,13 +8,15 @@ if (typeof module !== 'undefined' && module.exports) {
     const { Navigation, HebrewNavigation } = require('./Navigation');
     const { Modal, HebrewModals } = require('./Modal');
     const { Toast, HebrewToasts } = require('./Toast');
+    const { ThemeToggle } = require('./ThemeToggle');
     
     module.exports = {
         Button, HebrewButtons,
         Input, HebrewInputs,
         Navigation, HebrewNavigation,
         Modal, HebrewModals,
-        Toast, HebrewToasts
+        Toast, HebrewToasts,
+        ThemeToggle
     };
 } else {
     // Browser environment - components are already loaded globally
@@ -37,7 +39,8 @@ class ComponentUtils {
             { title: 'שדות קלט (Inputs)', content: ComponentUtils.createInputDemo() },
             { title: 'ניווט (Navigation)', content: ComponentUtils.createNavigationDemo() },
             { title: 'חלונות מודאלים (Modals)', content: ComponentUtils.createModalDemo() },
-            { title: 'התראות (Toasts)', content: ComponentUtils.createToastDemo() }
+            { title: 'התראות (Toasts)', content: ComponentUtils.createToastDemo() },
+            { title: 'נושא (Theme)', content: ComponentUtils.createThemeDemo() }
         ];
 
         sections.forEach(section => {
@@ -246,6 +249,83 @@ class ComponentUtils {
         return container;
     }
 
+    static createThemeDemo() {
+        const container = document.createElement('div');
+        container.className = 'demo-section';
+
+        const themeDescription = document.createElement('p');
+        themeDescription.textContent = 'מערכת הנושא מאפשרת מעבר בין מצב יום ולילה. השינויים נשמרים אוטומטית.';
+        themeDescription.style.marginBottom = 'var(--spacing-lg)';
+        themeDescription.style.color = 'var(--text-secondary)';
+        container.appendChild(themeDescription);
+
+        // Create theme toggle examples
+        const toggleContainer = document.createElement('div');
+        toggleContainer.style.display = 'flex';
+        toggleContainer.style.flexWrap = 'wrap';
+        toggleContainer.style.gap = 'var(--spacing-lg)';
+        toggleContainer.style.alignItems = 'center';
+
+        // Simple theme toggle (icon only)
+        if (typeof ThemeToggle !== 'undefined') {
+            const simpleToggle = new ThemeToggle({ showLabel: false });
+            const simpleWrapper = document.createElement('div');
+            simpleWrapper.innerHTML = `
+                <h4 style="margin-bottom: var(--spacing-sm);">מעבר פשוט</h4>
+                ${simpleToggle.getHTML()}
+            `;
+            const simpleButton = simpleWrapper.querySelector('.theme-toggle');
+            if (simpleButton) {
+                simpleButton.addEventListener('click', () => {
+                    simpleToggle.toggleTheme();
+                });
+            }
+            toggleContainer.appendChild(simpleWrapper);
+
+            // Labeled theme toggle
+            const labeledToggle = new ThemeToggle({ showLabel: true });
+            const labeledWrapper = document.createElement('div');
+            labeledWrapper.innerHTML = `
+                <h4 style="margin-bottom: var(--spacing-sm);">מעבר עם תווית</h4>
+                ${labeledToggle.getHTML()}
+            `;
+            const labeledButton = labeledWrapper.querySelector('.theme-toggle');
+            if (labeledButton) {
+                labeledButton.addEventListener('click', () => {
+                    labeledToggle.toggleTheme();
+                });
+            }
+            toggleContainer.appendChild(labeledWrapper);
+        }
+
+        // Theme information display
+        const themeInfo = document.createElement('div');
+        themeInfo.style.marginTop = 'var(--spacing-lg)';
+        themeInfo.style.padding = 'var(--spacing-md)';
+        themeInfo.style.backgroundColor = 'var(--bg-tertiary)';
+        themeInfo.style.borderRadius = 'var(--radius-md)';
+        themeInfo.style.border = '1px solid var(--border-color)';
+        
+        const updateThemeInfo = () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            themeInfo.innerHTML = `
+                <h4 style="margin-bottom: var(--spacing-sm);">מידע על הנושא הנוכחי</h4>
+                <p><strong>נושא פעיל:</strong> ${currentTheme === 'dark' ? 'מצב לילה' : 'מצב יום'}</p>
+                <p><strong>שמירה:</strong> ${localStorage.getItem('theme') ? 'נשמר באופן מקומי' : 'לא נשמר'}</p>
+                <p><strong>העדפת מערכת:</strong> ${window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'מצב לילה' : 'מצב יום'}</p>
+            `;
+        };
+
+        updateThemeInfo();
+        
+        // Listen for theme changes to update info
+        document.addEventListener('themeChanged', updateThemeInfo);
+
+        container.appendChild(toggleContainer);
+        container.appendChild(themeInfo);
+        return container;
+    }
+
     // Helper to load components dynamically
     static async loadComponents() {
         const componentFiles = [
@@ -253,7 +333,8 @@ class ComponentUtils {
             'Input.js',
             'Navigation.js',
             'Modal.js',
-            'Toast.js'
+            'Toast.js',
+            'ThemeToggle.js'
         ];
 
         const loadPromises = componentFiles.map(file => {
