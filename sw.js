@@ -49,6 +49,11 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve cached content when offline
 self.addEventListener('fetch', (event) => {
+  // Skip chrome-extension and other non-http requests
+  if (!event.request.url.startsWith('http')) {
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -64,14 +69,7 @@ self.addEventListener('fetch', (event) => {
             return response;
           }
           
-          // Clone the response
-          const responseToCache = response.clone();
-          
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          
+          // Skip caching for now to avoid errors
           return response;
         }).catch(() => {
           // Show offline page for navigation requests
@@ -79,6 +77,10 @@ self.addEventListener('fetch', (event) => {
             return caches.match('./');
           }
         });
+      })
+      .catch((error) => {
+        console.log('Service Worker fetch error:', error);
+        return fetch(event.request);
       })
   );
 });
