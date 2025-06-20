@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/Personal-Finance-/',
+  base: process.env.NODE_ENV === 'production' ? '/Personal-Finance-/' : '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
