@@ -40,30 +40,76 @@ async function initializeApp() {
 }
 
 async function loadComponentLibrary() {
+    // Files with ES6 exports that need dynamic import
+    const es6ModuleFiles = [
+        './src/utils/israeli-salary-calculator.js',
+        './src/utils/hebrew-financial-terms.js', 
+        './src/utils/israeli-financial-tips.js',
+        './src/components/ThemeToggle.js',
+        './src/components/TransactionForm.js',
+        './src/components/CategoryManager.js',
+        './src/data/index.js'
+    ];
+
+    // Files with conditional exports that can use script tags
     const componentFiles = [
         './src/utils/israeli-formatting.js',
-        './src/utils/israeli-salary-calculator.js',
-        './src/utils/hebrew-financial-terms.js',
-        './src/utils/israeli-financial-tips.js',
         './src/components/Button.js',
         './src/components/Input.js', 
         './src/components/Navigation.js',
         './src/components/Modal.js',
         './src/components/Toast.js',
-        './src/components/ThemeToggle.js',
-        './src/components/TransactionForm.js',
-        './src/components/CategoryManager.js',
         './src/components/Dashboard.js',
         './src/components/TransactionList.js',
         './src/components/Charts.js',
-        './src/components/index.js',
-        './src/data/index.js'
+        './src/components/index.js'
     ];
 
     try {
+        // Load ES6 modules using dynamic imports first
+        for (const file of es6ModuleFiles) {
+            try {
+                const module = await import(file);
+                console.log(`📦 ES6 Module loaded: ${file}`);
+                
+                // Make key exports available globally
+                if (module.DataAPI) {
+                    window.DataAPI = module.DataAPI;
+                    console.log('💾 DataAPI available globally');
+                }
+                if (module.DataManager) {
+                    window.DataManager = module.DataManager;
+                    console.log('💾 DataManager available globally');
+                }
+                if (module.IsraeliSalaryCalculator) {
+                    window.IsraeliSalaryCalculator = module.IsraeliSalaryCalculator;
+                }
+                if (module.HEBREW_FINANCIAL_TERMS) {
+                    window.HEBREW_FINANCIAL_TERMS = module.HEBREW_FINANCIAL_TERMS;
+                }
+                if (module.ISRAELI_FINANCIAL_TIPS) {
+                    window.ISRAELI_FINANCIAL_TIPS = module.ISRAELI_FINANCIAL_TIPS;
+                }
+                if (module.ThemeToggle) {
+                    window.ThemeToggle = module.ThemeToggle;
+                }
+                if (module.TransactionForm) {
+                    window.TransactionForm = module.TransactionForm;
+                }
+                if (module.CategoryManager) {
+                    window.CategoryManager = module.CategoryManager;
+                }
+            } catch (moduleError) {
+                console.error(`❌ Error loading ES6 module ${file}:`, moduleError);
+                // Continue with other modules even if one fails
+            }
+        }
+        
+        // Load regular component files using script tags
         for (const file of componentFiles) {
             await loadScript(file);
         }
+        
         console.log('📦 Hebrew UI Components loaded successfully');
         console.log('💾 Data Management System loaded successfully');
     } catch (error) {
@@ -76,8 +122,14 @@ function loadScript(src) {
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
         script.src = src;
-        script.onload = resolve;
-        script.onerror = reject;
+        script.onload = () => {
+            console.log(`📦 Script loaded: ${src}`);
+            resolve();
+        };
+        script.onerror = (error) => {
+            console.error(`❌ Failed to load script: ${src}`, error);
+            reject(error);
+        };
         document.head.appendChild(script);
     });
 }
@@ -419,7 +471,7 @@ window.addEventListener('error', (e) => {
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         // Use relative path for service worker to work with GitHub Pages subdirectory
-        navigator.serviceWorker.register('./sw.js')
+        navigator.serviceWorker.register('./public/sw.js')
             .then(registration => {
                 console.log('SW registered: ', registration);
             })
