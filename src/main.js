@@ -48,6 +48,7 @@ async function loadComponentLibrary() {
         './src/components/ThemeToggle.js',
         './src/components/TransactionForm.js',
         './src/components/CategoryManager.js',
+        './src/components/index.js',
         './src/data/index.js'
     ];
 
@@ -61,15 +62,14 @@ async function loadComponentLibrary() {
         './src/components/Toast.js',
         './src/components/Dashboard.js',
         './src/components/TransactionList.js',
-        './src/components/Charts.js',
-        './src/components/index.js'
+        './src/components/Charts.js'
     ];
 
     try {
         // Load ES6 modules using dynamic imports first
         for (const file of es6ModuleFiles) {
             try {
-                const module = await import(file);
+                const module = await import(/* @vite-ignore */ file);
                 console.log(`📦 ES6 Module loaded: ${file}`);
                 
                 // Make key exports available globally
@@ -99,8 +99,15 @@ async function loadComponentLibrary() {
                 if (module.CategoryManager) {
                     window.CategoryManager = module.CategoryManager;
                 }
+                if (module.ComponentUtils) {
+                    window.ComponentUtils = module.ComponentUtils;
+                }
             } catch (moduleError) {
                 console.error(`❌ Error loading ES6 module ${file}:`, moduleError);
+                // Show user-friendly error for critical components
+                if (file.includes('TransactionForm') || file.includes('DataAPI')) {
+                    console.warn(`⚠️ Critical component ${file} failed to load - some features may be unavailable`);
+                }
                 // Continue with other modules even if one fails
             }
         }
@@ -112,9 +119,27 @@ async function loadComponentLibrary() {
         
         console.log('📦 Hebrew UI Components loaded successfully');
         console.log('💾 Data Management System loaded successfully');
+        
+        // Check if critical components are available
+        const criticalComponents = ['Button', 'Toast', 'Modal', 'DataAPI'];
+        const missingComponents = criticalComponents.filter(comp => !window[comp]);
+        
+        if (missingComponents.length > 0) {
+            console.warn('⚠️ Some critical components are missing:', missingComponents);
+            // Still allow the app to continue, but with warnings
+        }
+        
     } catch (error) {
         console.error('❌ Error loading components:', error);
-        HebrewToasts?.error('שגיאה בטעינת רכיבי ממשק המשתמש');
+        
+        // Try to show error via basic alert if HebrewToasts is not available
+        if (typeof HebrewToasts !== 'undefined') {
+            HebrewToasts.error('שגיאה בטעינת רכיבי ממשק המשתמש');
+        } else {
+            // Fallback to alert if toast system failed to load
+            console.error('Toast system not available - using basic alert');
+            alert('שגיאה בטעינת רכיבי ממשק המשתמש - חלק מהפונקציות עלולות להיות לא זמינות');
+        }
     }
 }
 
@@ -128,7 +153,14 @@ function loadScript(src) {
         };
         script.onerror = (error) => {
             console.error(`❌ Failed to load script: ${src}`, error);
-            reject(error);
+            
+            // Show user-friendly error for critical components
+            if (src.includes('Button') || src.includes('Toast') || src.includes('Modal')) {
+                console.warn(`⚠️ Critical UI component ${src} failed to load - some UI features may be unavailable`);
+            }
+            
+            // Don't reject to allow other scripts to continue loading
+            resolve(); // Resolve instead of reject to prevent stopping the entire loading process
         };
         document.head.appendChild(script);
     });
@@ -470,8 +502,8 @@ window.addEventListener('error', (e) => {
 // Service worker registration (for PWA functionality)
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        // Use relative path for service worker to work with GitHub Pages subdirectory
-        navigator.serviceWorker.register('./public/sw.js')
+        // Use correct path for service worker - works for both local and GitHub Pages
+        navigator.serviceWorker.register('./sw.js')
             .then(registration => {
                 console.log('SW registered: ', registration);
             })
