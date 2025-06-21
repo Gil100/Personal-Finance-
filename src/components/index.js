@@ -10,6 +10,10 @@ if (typeof module !== 'undefined' && module.exports) {
     const { Toast, HebrewToasts } = require('./Toast');
     const { ThemeToggle } = require('./ThemeToggle');
     const { TransactionForm } = require('./TransactionForm');
+    const { SeasonalBudgetPlanning } = require('./SeasonalBudgetPlanning');
+    const { BudgetTaxExport } = require('./BudgetTaxExport');
+    const { BudgetHistoryComparison } = require('./BudgetHistoryComparison');
+    const { BudgetPerformanceAnalytics } = require('./BudgetPerformanceAnalytics');
     
     module.exports = {
         Button, HebrewButtons,
@@ -18,7 +22,11 @@ if (typeof module !== 'undefined' && module.exports) {
         Modal, HebrewModals,
         Toast, HebrewToasts,
         ThemeToggle,
-        TransactionForm
+        TransactionForm,
+        SeasonalBudgetPlanning,
+        BudgetTaxExport,
+        BudgetHistoryComparison,
+        BudgetPerformanceAnalytics
     };
 } else {
     // Browser environment - components are already loaded globally
@@ -385,7 +393,12 @@ class ComponentUtils {
             'Navigation.js',
             'Modal.js',
             'Toast.js',
-            'ThemeToggle.js'
+            'ThemeToggle.js',
+            'BudgetWizard.js',
+            'BudgetManager.js',
+            'BudgetTracker.js',
+            'BudgetAlerts.js',
+            'GoalBudgetingSystem.js'
         ];
 
         const loadPromises = componentFiles.map(file => {
