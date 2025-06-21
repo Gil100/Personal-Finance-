@@ -152,23 +152,25 @@ A comprehensive, client-side personal finance tracker designed specifically for 
 - [x] Build salary calculator with Israeli tax brackets
 - [x] Add support for Israeli bank CSV formats
 - [x] Implement Hebrew financial terminology throughout
+- [x] Add support for dual currency (USD/EUR tracking)
+- [x] Create Israeli-specific financial tips and insights
+- [x] Implement Hebrew number formatting and date formats
+
+### Future Enhancements (Low Priority):
 - [ ] Create Israeli holiday calendar integration
 - [ ] Add inflation tracking for Israeli market
 - [ ] Build cost of living calculator for Israeli cities
-- [x] Add support for dual currency (USD/EUR tracking)
-- [ ] Create Israeli-specific financial tips and insights
-- [x] Implement Hebrew number formatting and date formats
 
 **Status:** ✅ **COMPLETED** - June 20, 2025
-**Core Features:** Enhanced shekel formatting, tax year support, Israeli categories, bank CSV formats, salary calculator, Hebrew terminology
+**Core Features:** Enhanced shekel formatting, tax year support, Israeli categories, bank CSV formats, salary calculator, Hebrew terminology, financial tips
 **Build Size:** 8.17 kB optimized with comprehensive Israeli localization system
 
 ##  Checkpoint 6: Transaction Management
 **Goal:** Complete transaction system with Israeli banking support
 
 ### Tasks:
-- [ ] Build add/edit transaction forms with Hebrew labels
-- [ ] Create transaction categorization system
+- [x] Build add/edit transaction forms with Hebrew labels
+- [x] Create transaction categorization system
 - [ ] Implement recurring transaction support
 - [ ] Add transaction search with Hebrew text support
 - [ ] Build bulk transaction operations
@@ -179,6 +181,15 @@ A comprehensive, client-side personal finance tracker designed specifically for 
 - [ ] Add transaction location tracking (optional)
 - [ ] Create transaction splitting functionality
 - [ ] Implement transaction synchronization between devices
+
+**Status:** 🔄 **IN PROGRESS** - June 20, 2025  
+**Progress:** 2/12 tasks completed (16.7%)  
+**Components Created:** TransactionForm, CategoryManager with full Hebrew RTL support  
+**Build Size:** 8.60 kB optimized
+
+**Completed Features:**
+- ✅ **Transaction Forms**: Hebrew transaction entry with expense/income types, currency formatting, tags, notes, recurring options
+- ✅ **Category Management**: Full category system with Hebrew search, filtering, icon picker, CRUD operations, modal integration
 
 ##  Checkpoint 7: Budget Management
 **Goal:** Comprehensive budgeting system for Israeli users

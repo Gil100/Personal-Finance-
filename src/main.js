@@ -44,12 +44,15 @@ async function loadComponentLibrary() {
         './src/utils/israeli-formatting.js',
         './src/utils/israeli-salary-calculator.js',
         './src/utils/hebrew-financial-terms.js',
+        './src/utils/israeli-financial-tips.js',
         './src/components/Button.js',
         './src/components/Input.js', 
         './src/components/Navigation.js',
         './src/components/Modal.js',
         './src/components/Toast.js',
         './src/components/ThemeToggle.js',
+        './src/components/TransactionForm.js',
+        './src/components/CategoryManager.js',
         './src/components/Dashboard.js',
         './src/components/TransactionList.js',
         './src/components/Charts.js',
@@ -265,6 +268,16 @@ function initializeHebrewFormatting() {
             console.log('🏦 Bank:', getTerm('bank'));
             console.log('📊 Budget:', getTerm('budget'));
             console.log('✅ Success phrase:', getSuccess('saved'));
+        }
+        
+        // Test Israeli financial tips
+        if (window.financialTips) {
+            console.log('💡 Testing Israeli Financial Tips...');
+            const tipOfDay = getTipOfTheDay();
+            console.log('📅 Tip of the day:', tipOfDay.title);
+            console.log('🎯 High priority tips:', getHighPriorityTips().length, 'available');
+            const taxTips = getTipsByCategory('taxes');
+            console.log('🏛️ Tax tips:', taxTips.length, 'available');
         }
     } else {
         console.warn('⚠️ Israeli Formatter not loaded - using basic formatting');

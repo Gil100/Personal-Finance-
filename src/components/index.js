@@ -9,6 +9,7 @@ if (typeof module !== 'undefined' && module.exports) {
     const { Modal, HebrewModals } = require('./Modal');
     const { Toast, HebrewToasts } = require('./Toast');
     const { ThemeToggle } = require('./ThemeToggle');
+    const { TransactionForm } = require('./TransactionForm');
     
     module.exports = {
         Button, HebrewButtons,
@@ -16,7 +17,8 @@ if (typeof module !== 'undefined' && module.exports) {
         Navigation, HebrewNavigation,
         Modal, HebrewModals,
         Toast, HebrewToasts,
-        ThemeToggle
+        ThemeToggle,
+        TransactionForm
     };
 } else {
     // Browser environment - components are already loaded globally
@@ -35,6 +37,7 @@ class ComponentUtils {
 
         // Demo sections
         const sections = [
+            { title: 'טופס עסקאות (Transaction Form)', content: ComponentUtils.createTransactionFormDemo() },
             { title: 'לוח בקרה (Dashboard)', content: ComponentUtils.createDashboardDemo() },
             { title: 'רשימת עסקאות (Transaction List)', content: ComponentUtils.createTransactionListDemo() },
             { title: 'תרשימים (Charts)', content: ComponentUtils.createChartsDemo() },
@@ -61,6 +64,51 @@ class ComponentUtils {
             container.appendChild(sectionDiv);
         });
 
+        return container;
+    }
+
+    static createTransactionFormDemo() {
+        const container = document.createElement('div');
+        container.className = 'demo-section';
+
+        const description = document.createElement('p');
+        description.textContent = 'טופס עסקאות מתקדם עם תמיכה בעברית, קטגוריות ישראליות ואימותים';
+        description.style.marginBottom = 'var(--spacing-lg)';
+        description.style.color = 'var(--text-secondary)';
+        container.appendChild(description);
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.flexWrap = 'wrap';
+        buttonContainer.style.gap = 'var(--spacing-md)';
+
+        const formButtons = [
+            {
+                text: 'הוסף עסקה חדשה',
+                action: () => {
+                    ComponentUtils.showTransactionForm(buttonContainer, 'add');
+                }
+            },
+            {
+                text: 'ערוך עסקה קיימת',
+                action: () => {
+                    ComponentUtils.showTransactionForm(buttonContainer, 'edit');
+                }
+            },
+            {
+                text: 'טופס הכנסה',
+                action: () => {
+                    ComponentUtils.showTransactionForm(buttonContainer, 'income');
+                }
+            }
+        ];
+
+        formButtons.forEach(({ text, action }) => {
+            const button = new Button({ type: 'primary' }).render(text, action);
+            buttonContainer.appendChild(button);
+        });
+
+        container.appendChild(buttonContainer);
         return container;
     }
 
@@ -846,6 +894,80 @@ class ComponentUtils {
         parentContainer.parentNode.insertBefore(chartsContainer, parentContainer.nextSibling);
         
         HebrewToasts?.success(`תרשים ${chartTitles[type]} נטען בהצלחה`, 'ברוכים הבאים');
+    }
+
+    static showTransactionForm(parentContainer, mode = 'add') {
+        // Check if form already exists
+        const existingForm = parentContainer.parentNode.querySelector('.embedded-transaction-form');
+        if (existingForm) {
+            existingForm.remove();
+            return;
+        }
+
+        if (typeof TransactionForm === 'undefined') {
+            HebrewToasts?.error('רכיב טופס העסקאות לא נטען');
+            return;
+        }
+
+        // Create form container
+        const formContainer = document.createElement('div');
+        formContainer.className = 'embedded-transaction-form';
+        formContainer.style.cssText = `
+            margin-top: var(--spacing-lg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            background: var(--bg-secondary);
+            overflow: hidden;
+            max-width: 600px;
+            margin: var(--spacing-lg) auto 0;
+        `;
+
+        // Sample transaction data for edit mode
+        const sampleTransaction = {
+            id: 'tx_sample_001',
+            type: mode === 'income' ? 'income' : 'expense',
+            amount: 250.75,
+            description: 'קניות בסופר',
+            category: 'cat_food',
+            account: 'acc_main',
+            date: new Date().toISOString().split('T')[0],
+            tags: ['מזון', 'סופר'],
+            notes: 'קניות שבועיות במרכז המסחרי',
+            isRecurring: false,
+            recurringFrequency: 'monthly'
+        };
+
+        // Configure form options
+        const formOptions = {
+            mode: mode === 'edit' ? 'edit' : 'add',
+            transaction: mode === 'edit' ? sampleTransaction : { type: mode === 'income' ? 'income' : 'expense' },
+            onSave: (transactionData, action) => {
+                if (action === 'deleted') {
+                    HebrewToasts?.success('העסקה נמחקה בהצלחה');
+                } else {
+                    HebrewToasts?.success(`עסקה ${mode === 'edit' ? 'עודכנה' : 'נוספה'} בהצלחה`);
+                }
+                formContainer.remove();
+            },
+            onCancel: () => {
+                HebrewToasts?.info('פעולה בוטלה');
+                formContainer.remove();
+            }
+        };
+
+        // Create transaction form
+        const transactionForm = new TransactionForm(formContainer, formOptions);
+        
+        // Insert after the button container
+        parentContainer.parentNode.insertBefore(formContainer, parentContainer.nextSibling);
+        
+        const modeText = {
+            'add': 'הוספת עסקה חדשה',
+            'edit': 'עריכת עסקה קיימת',
+            'income': 'הוספת הכנסה'
+        };
+        
+        HebrewToasts?.success(`טופס ${modeText[mode]} נטען`, 'ברוכים הבאים');
     }
 }
 
