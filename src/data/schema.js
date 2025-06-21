@@ -14,6 +14,7 @@ export const DATA_SCHEMA = {
     BUDGETS: 'pf_budgets',
     ACCOUNTS: 'pf_accounts',
     SETTINGS: 'pf_settings',
+    TEMPLATES: 'pf_templates',
     SCHEMA_VERSION: 'pf_schema_version'
   },
 
@@ -89,6 +90,23 @@ export const DATA_SCHEMA = {
     הצפנה: 'boolean',       // encryption enabled
     נוצר: 'datetime',       // created timestamp
     עודכן: 'datetime'       // updated timestamp
+  },
+
+  // Transaction template data structure
+  TEMPLATE: {
+    id: 'string',           // מזהה תבנית
+    name: 'string',         // שם התבנית
+    description: 'string',  // תיאור התבנית
+    type: 'string',         // type: 'הכנסה' | 'הוצאה'
+    amount: 'number',       // סכום ברירת מחדל
+    category: 'string',     // category ID
+    frequency: 'string',    // תדירות: 'weekly' | 'monthly' | etc.
+    tags: 'array',          // תגיות
+    icon: 'string',         // אייקון
+    color: 'string',        // צבע
+    isDefault: 'boolean',   // תבנית ברירת מחדל
+    createdAt: 'datetime',  // created timestamp
+    updatedAt: 'datetime'   // updated timestamp
   }
 };
 

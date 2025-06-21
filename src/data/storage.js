@@ -313,7 +313,8 @@ class StorageManager {
       'categories': DATA_SCHEMA.STORAGE_KEYS.CATEGORIES,
       'budgets': DATA_SCHEMA.STORAGE_KEYS.BUDGETS,
       'accounts': DATA_SCHEMA.STORAGE_KEYS.ACCOUNTS,
-      'settings': DATA_SCHEMA.STORAGE_KEYS.SETTINGS
+      'settings': DATA_SCHEMA.STORAGE_KEYS.SETTINGS,
+      'templates': DATA_SCHEMA.STORAGE_KEYS.TEMPLATES
     };
 
     return keyMap[type] || type;
@@ -449,6 +450,24 @@ export const StorageAPI = {
   settings: {
     get: () => storage.getSettings(),
     update: (updates) => storage.updateSettings(updates)
+  },
+
+  // Templates
+  templates: {
+    getAll: () => storage.getAll('templates'),
+    getById: (id) => storage.getById('templates', id),
+    save: (template) => storage.save('templates', template),
+    update: (id, updates) => storage.update('templates', id, updates),
+    delete: (id) => storage.delete('templates', id),
+    getByType: (type) => {
+      return storage.getFiltered('templates', (template) => template.type === type);
+    },
+    getDefaults: () => {
+      return storage.getFiltered('templates', (template) => template.isDefault === true);
+    },
+    getCustom: () => {
+      return storage.getFiltered('templates', (template) => template.isDefault !== true);
+    }
   },
 
   // Utility

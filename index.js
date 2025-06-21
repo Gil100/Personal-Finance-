@@ -1,3 +1,3 @@
 export default function({ sessionId, config }) {
-  console.log("Server running for session:", sessionId);
+  console.log("Smithery MCP dev server is running. Session:", sessionId);
 }

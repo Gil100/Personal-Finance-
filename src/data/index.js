@@ -117,6 +117,7 @@ export const DataAPI = {
   budgets: StorageAPI.budgets,
   accounts: StorageAPI.accounts,
   settings: StorageAPI.settings,
+  templates: StorageAPI.templates,
 
   // Data validation
   validation: {
@@ -210,6 +211,42 @@ export {
   DATA_SCHEMA,
   DEFAULT_CATEGORIES,
   ISRAELI_BANKS
+};
+
+// Convenience wrapper for easier component usage
+export const DataManager = {
+  // Transactions
+  getTransactions: () => DataAPI.transactions.getAll(),
+  addTransaction: (data) => DataAPI.transactions.save(data),
+  updateTransaction: (id, data) => DataAPI.transactions.update(id, data),
+  deleteTransaction: (id) => DataAPI.transactions.delete(id),
+  searchTransactions: (query) => DataAPI.search.transactions(query),
+
+  // Categories
+  getCategories: () => DataAPI.categories.getAll(),
+  addCategory: (data) => DataAPI.categories.save(data),
+  updateCategory: (id, data) => DataAPI.categories.update(id, data),
+  deleteCategory: (id) => DataAPI.categories.delete(id),
+
+  // Accounts
+  getAccounts: () => DataAPI.accounts.getAll(),
+  addAccount: (data) => DataAPI.accounts.save(data),
+  updateAccount: (id, data) => DataAPI.accounts.update(id, data),
+  deleteAccount: (id) => DataAPI.accounts.delete(id),
+
+  // Templates
+  getTransactionTemplates: () => DataAPI.templates.getAll(),
+  saveTransactionTemplate: (data) => DataAPI.templates.save(data),
+  updateTransactionTemplate: (id, data) => DataAPI.templates.update(id, data),
+  deleteTransactionTemplate: (id) => DataAPI.templates.delete(id),
+  getTemplatesByType: (type) => DataAPI.templates.getByType(type),
+
+  // Export
+  exportTransactions: (transactions, options) => DataAPI.backup.exportTransactions(transactions, options),
+
+  // Validation
+  validateTransaction: (data) => DataAPI.validation.validateTransaction(data),
+  validateCategory: (data) => DataAPI.validation.validateCategory(data)
 };
 
 // Export as default

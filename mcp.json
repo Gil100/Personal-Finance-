@@ -33,7 +33,15 @@
         "--key",
         "30a9cc1b-e09e-4120-be7f-2567f24d59fa"
       ]
+    },
+    "excel-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli",
+        "run",
+        "excel-mcp-server"
+      ]
     }
   }
 }
-

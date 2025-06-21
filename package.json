@@ -4,6 +4,7 @@
   "type": "module",
   "description": "Personal Finance Dashboard - Israeli Edition",
   "main": "src/main.js",
+  "module": "./index.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

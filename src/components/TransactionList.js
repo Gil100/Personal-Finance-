@@ -35,6 +35,10 @@ class TransactionList {
         this.sortBy = 'date'; // 'date', 'amount', 'description', 'category'
         this.sortOrder = 'desc'; // 'asc', 'desc'
         
+        // Bulk operations
+        this.bulkMode = false;
+        this.selectedTransactions = new Set();
+        
         // Elements
         this.element = null;
         this.listContainer = null;
@@ -144,20 +148,52 @@ class TransactionList {
     }
     
     renderHeaderActions() {
+        const selectedCount = this.selectedTransactions.size;
+        
         return `
             <div class="header-action-buttons">
-                <button class="action-btn refresh-btn" data-action="refresh">
-                    <span class="icon">🔄</span>
-                    <span>רענן</span>
-                </button>
-                <button class="action-btn export-btn" data-action="export">
-                    <span class="icon">📊</span>
-                    <span>יצא</span>
-                </button>
-                <button class="action-btn add-btn" data-action="add">
-                    <span class="icon">➕</span>
-                    <span>עסקה חדשה</span>
-                </button>
+                ${!this.bulkMode ? `
+                    <button class="action-btn refresh-btn" data-action="refresh">
+                        <span class="icon">🔄</span>
+                        <span>רענן</span>
+                    </button>
+                    <button class="action-btn export-btn" data-action="export">
+                        <span class="icon">📊</span>
+                        <span>יצא</span>
+                    </button>
+                    <button class="action-btn add-btn" data-action="add">
+                        <span class="icon">➕</span>
+                        <span>עסקה חדשה</span>
+                    </button>
+                    <button class="action-btn bulk-mode-btn" data-action="toggle-bulk">
+                        <span class="icon">☑️</span>
+                        <span>בחירה מרובה</span>
+                    </button>
+                ` : `
+                    <div class="bulk-selection-info">
+                        <span class="selected-count">${selectedCount} נבחרו</span>
+                        <button class="btn-text" data-action="select-all">בחר הכל</button>
+                        <button class="btn-text" data-action="deselect-all">בטל הכל</button>
+                    </div>
+                    <div class="bulk-action-buttons">
+                        <button class="action-btn bulk-delete-btn" data-action="bulk-delete" ${selectedCount === 0 ? 'disabled' : ''}>
+                            <span class="icon">🗑️</span>
+                            <span>מחק (${selectedCount})</span>
+                        </button>
+                        <button class="action-btn bulk-categorize-btn" data-action="bulk-categorize" ${selectedCount === 0 ? 'disabled' : ''}>
+                            <span class="icon">🏷️</span>
+                            <span>שנה קטגוריה</span>
+                        </button>
+                        <button class="action-btn bulk-export-btn" data-action="bulk-export" ${selectedCount === 0 ? 'disabled' : ''}>
+                            <span class="icon">📊</span>
+                            <span>יצא נבחרים</span>
+                        </button>
+                        <button class="action-btn cancel-bulk-btn" data-action="toggle-bulk">
+                            <span class="icon">❌</span>
+                            <span>ביטול</span>
+                        </button>
+                    </div>
+                `}
             </div>
         `;
     }
@@ -167,11 +203,45 @@ class TransactionList {
             <div class="filters-bar">
                 ${this.options.enableSearch ? `
                     <div class="search-box">
-                        <input type="text" 
-                               placeholder="חיפוש עסקאות..." 
-                               value="${this.filters.search}"
-                               class="search-input">
-                        <span class="search-icon">🔍</span>
+                        <div class="search-input-container">
+                            <input type="text" 
+                                   placeholder="חיפוש בתיאור, קטגוריה, תגיות או הערות..." 
+                                   value="${this.filters.search}"
+                                   class="search-input">
+                            <span class="search-icon">🔍</span>
+                            <button class="advanced-search-btn" type="button" title="חיפוש מתקדם">⚙️</button>
+                        </div>
+                        <div class="search-suggestions" style="display: none;">
+                            <div class="suggestions-list"></div>
+                        </div>
+                        <div class="advanced-search-panel" style="display: none;">
+                            <div class="advanced-search-grid">
+                                <div class="search-field">
+                                    <label>טווח סכומים</label>
+                                    <div class="amount-range">
+                                        <input type="number" placeholder="מסכום" class="amount-min" min="0">
+                                        <span>-</span>
+                                        <input type="number" placeholder="עד סכום" class="amount-max" min="0">
+                                    </div>
+                                </div>
+                                <div class="search-field">
+                                    <label>טווח תאריכים</label>
+                                    <div class="date-range">
+                                        <input type="date" class="date-from">
+                                        <span>עד</span>
+                                        <input type="date" class="date-to">
+                                    </div>
+                                </div>
+                                <div class="search-field">
+                                    <label>תגיות</label>
+                                    <input type="text" placeholder="חיפוש לפי תגיות" class="tags-search">
+                                </div>
+                            </div>
+                            <div class="advanced-search-actions">
+                                <button class="btn-secondary apply-advanced-search">החל חיפוש</button>
+                                <button class="btn-ghost clear-advanced-search">נקה</button>
+                            </div>
+                        </div>
                     </div>
                 ` : ''}
                 
@@ -256,10 +326,20 @@ class TransactionList {
         const icon = this.getTransactionIcon(transaction.category);
         const amountClass = transaction.type === 'income' ? 'positive' : 'negative';
         const formattedDate = this.formatTransactionDate(transaction.date);
+        const isSelected = this.selectedTransactions.has(transaction.id);
         
         return `
-            <div class="transaction-item ${transaction.type}" data-transaction-id="${transaction.id}">
+            <div class="transaction-item ${transaction.type} ${this.bulkMode ? 'bulk-mode' : ''} ${isSelected ? 'selected' : ''}" 
+                 data-transaction-id="${transaction.id}">
                 <div class="transaction-main">
+                    ${this.bulkMode ? `
+                        <div class="transaction-checkbox">
+                            <input type="checkbox" 
+                                   class="bulk-checkbox" 
+                                   data-transaction-id="${transaction.id}"
+                                   ${isSelected ? 'checked' : ''}>
+                        </div>
+                    ` : ''}
                     <div class="transaction-icon">
                         ${icon}
                     </div>
@@ -276,14 +356,16 @@ class TransactionList {
                     <div class="transaction-amount ${amountClass}">
                         ${formatCurrency(transaction.amount)}
                     </div>
-                    <div class="transaction-actions">
-                        <button class="action-icon edit-btn" data-action="edit" data-id="${transaction.id}" title="ערוך">
-                            ✏️
-                        </button>
-                        <button class="action-icon delete-btn" data-action="delete" data-id="${transaction.id}" title="מחק">
-                            🗑️
-                        </button>
-                    </div>
+                    ${!this.bulkMode ? `
+                        <div class="transaction-actions">
+                            <button class="action-icon edit-btn" data-action="edit" data-id="${transaction.id}" title="ערוך">
+                                ✏️
+                            </button>
+                            <button class="action-icon delete-btn" data-action="delete" data-id="${transaction.id}" title="מחק">
+                                🗑️
+                            </button>
+                        </div>
+                    ` : ''}
                 </div>
                 
                 ${this.renderRunningBalance(index)}
@@ -428,16 +510,30 @@ class TransactionList {
     }
     
     // Filter and sort methods
-    applyFilters() {
+    async applyFilters() {
         let filtered = [...this.transactions];
         
-        // Search filter
+        // Search filter with Hebrew text support
         if (this.filters.search) {
-            const search = this.filters.search.toLowerCase();
-            filtered = filtered.filter(t => 
-                t.description.toLowerCase().includes(search) ||
-                t.category.toLowerCase().includes(search)
-            );
+            try {
+                // Import Hebrew search capabilities
+                const { DataManager } = await import('../data/index.js');
+                const searchResults = await DataManager.searchTransactions(this.filters.search);
+                
+                // Get IDs of matching transactions
+                const matchingIds = new Set(searchResults.map(t => t.id));
+                filtered = filtered.filter(t => matchingIds.has(t.id));
+            } catch (error) {
+                console.warn('Advanced search failed, using basic search:', error);
+                // Fallback to basic search
+                const search = this.filters.search.toLowerCase();
+                filtered = filtered.filter(t => 
+                    t.description?.toLowerCase().includes(search) ||
+                    t.category?.toLowerCase().includes(search) ||
+                    t.notes?.toLowerCase().includes(search) ||
+                    (t.tags && t.tags.some(tag => tag.toLowerCase().includes(search)))
+                );
+            }
         }
         
         // Type filter
@@ -453,6 +549,38 @@ class TransactionList {
         // Date range filter
         if (this.filters.dateRange !== 'all') {
             filtered = this.applyDateFilter(filtered);
+        }
+        
+        // Advanced search filters
+        if (this.filters.amountRange && (this.filters.amountRange.min !== null || this.filters.amountRange.max !== null)) {
+            filtered = filtered.filter(t => {
+                const amount = Math.abs(t.amount);
+                const min = this.filters.amountRange.min;
+                const max = this.filters.amountRange.max;
+                
+                if (min !== null && amount < min) return false;
+                if (max !== null && amount > max) return false;
+                return true;
+            });
+        }
+        
+        if (this.filters.customDateRange && (this.filters.customDateRange.start || this.filters.customDateRange.end)) {
+            filtered = filtered.filter(t => {
+                const transactionDate = new Date(t.date);
+                const startDate = this.filters.customDateRange.start ? new Date(this.filters.customDateRange.start) : null;
+                const endDate = this.filters.customDateRange.end ? new Date(this.filters.customDateRange.end) : null;
+                
+                if (startDate && transactionDate < startDate) return false;
+                if (endDate && transactionDate > endDate) return false;
+                return true;
+            });
+        }
+        
+        if (this.filters.tagsSearch) {
+            const tagsQuery = this.filters.tagsSearch.toLowerCase();
+            filtered = filtered.filter(t => 
+                t.tags && t.tags.some(tag => tag.toLowerCase().includes(tagsQuery))
+            );
         }
         
         // Sort
@@ -528,40 +656,48 @@ class TransactionList {
     attachEventListeners() {
         if (!this.element) return;
         
-        // Search input
+        // Search input with debounce for better performance
         const searchInput = this.element.querySelector('.search-input');
         if (searchInput) {
+            let searchTimeout;
             searchInput.addEventListener('input', (e) => {
                 this.filters.search = e.target.value;
-                this.applyFilters();
-                this.refreshList();
+                
+                // Clear previous timeout
+                clearTimeout(searchTimeout);
+                
+                // Debounce search for 300ms
+                searchTimeout = setTimeout(async () => {
+                    await this.applyFilters();
+                    this.refreshList();
+                }, 300);
             });
         }
         
         // Filter selects
         const typeFilter = this.element.querySelector('.type-filter');
         if (typeFilter) {
-            typeFilter.addEventListener('change', (e) => {
+            typeFilter.addEventListener('change', async (e) => {
                 this.filters.type = e.target.value;
-                this.applyFilters();
+                await this.applyFilters();
                 this.refreshList();
             });
         }
         
         const categoryFilter = this.element.querySelector('.category-filter');
         if (categoryFilter) {
-            categoryFilter.addEventListener('change', (e) => {
+            categoryFilter.addEventListener('change', async (e) => {
                 this.filters.category = e.target.value;
-                this.applyFilters();
+                await this.applyFilters();
                 this.refreshList();
             });
         }
         
         const dateFilter = this.element.querySelector('.date-filter');
         if (dateFilter) {
-            dateFilter.addEventListener('change', (e) => {
+            dateFilter.addEventListener('change', async (e) => {
                 this.filters.dateRange = e.target.value;
-                this.applyFilters();
+                await this.applyFilters();
                 this.refreshList();
             });
         }
@@ -569,14 +705,20 @@ class TransactionList {
         // Sort select
         const sortSelect = this.element.querySelector('.sort-select');
         if (sortSelect) {
-            sortSelect.addEventListener('change', (e) => {
+            sortSelect.addEventListener('change', async (e) => {
                 const [sortBy, sortOrder] = e.target.value.split('-');
                 this.sortBy = sortBy;
                 this.sortOrder = sortOrder;
-                this.applyFilters();
+                await this.applyFilters();
                 this.refreshList();
             });
         }
+        
+        // Advanced search functionality
+        this.setupAdvancedSearch();
+        
+        // Bulk operation checkboxes
+        this.setupBulkCheckboxes();
         
         // Action buttons
         this.element.querySelectorAll('[data-action]').forEach(button => {
@@ -609,6 +751,24 @@ class TransactionList {
                 break;
             case 'clear-filters':
                 this.clearFilters();
+                break;
+            case 'toggle-bulk':
+                this.toggleBulkMode();
+                break;
+            case 'select-all':
+                this.selectAllTransactions();
+                break;
+            case 'deselect-all':
+                this.deselectAllTransactions();
+                break;
+            case 'bulk-delete':
+                this.bulkDeleteTransactions();
+                break;
+            case 'bulk-categorize':
+                this.bulkCategorizeTransactions();
+                break;
+            case 'bulk-export':
+                this.bulkExportTransactions();
                 break;
             default:
                 HebrewToasts?.info(`פעולה: ${action}`, 'רשימת עסקאות');
@@ -783,6 +943,464 @@ class TransactionList {
         if (this.element) {
             this.element.remove();
             this.element = null;
+        }
+    }
+    
+    // Advanced search setup
+    setupAdvancedSearch() {
+        if (!this.element) return;
+        
+        // Advanced search toggle
+        const advancedBtn = this.element.querySelector('.advanced-search-btn');
+        const advancedPanel = this.element.querySelector('.advanced-search-panel');
+        
+        if (advancedBtn && advancedPanel) {
+            advancedBtn.addEventListener('click', () => {
+                const isVisible = advancedPanel.style.display !== 'none';
+                advancedPanel.style.display = isVisible ? 'none' : 'block';
+                advancedBtn.classList.toggle('active', !isVisible);
+            });
+        }
+        
+        // Apply advanced search
+        const applyBtn = this.element.querySelector('.apply-advanced-search');
+        if (applyBtn) {
+            applyBtn.addEventListener('click', async () => {
+                await this.applyAdvancedSearch();
+            });
+        }
+        
+        // Clear advanced search
+        const clearBtn = this.element.querySelector('.clear-advanced-search');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                this.clearAdvancedSearch();
+            });
+        }
+        
+        // Search suggestions
+        this.setupSearchSuggestions();
+    }
+    
+    async applyAdvancedSearch() {
+        const amountMin = this.element.querySelector('.amount-min')?.value;
+        const amountMax = this.element.querySelector('.amount-max')?.value;
+        const dateFrom = this.element.querySelector('.date-from')?.value;
+        const dateTo = this.element.querySelector('.date-to')?.value;
+        const tagsSearch = this.element.querySelector('.tags-search')?.value;
+        
+        // Update filters with advanced criteria
+        this.filters.amountRange = {
+            min: amountMin ? parseFloat(amountMin) : null,
+            max: amountMax ? parseFloat(amountMax) : null
+        };
+        
+        this.filters.customDateRange = {
+            start: dateFrom || null,
+            end: dateTo || null
+        };
+        
+        this.filters.tagsSearch = tagsSearch || '';
+        
+        // Apply filters and refresh
+        await this.applyFilters();
+        this.refreshList();
+        
+        // Show success message
+        if (window.showToast) {
+            window.showToast('חיפוש מתקדם הופעל', 'success');
+        }
+    }
+    
+    clearAdvancedSearch() {
+        // Clear advanced search inputs
+        const inputs = this.element.querySelectorAll('.advanced-search-panel input');
+        inputs.forEach(input => input.value = '');
+        
+        // Reset filters
+        this.filters.amountRange = { min: null, max: null };
+        this.filters.customDateRange = { start: null, end: null };
+        this.filters.tagsSearch = '';
+        
+        // Hide panel
+        const advancedPanel = this.element.querySelector('.advanced-search-panel');
+        if (advancedPanel) {
+            advancedPanel.style.display = 'none';
+        }
+        
+        // Remove active state from button
+        const advancedBtn = this.element.querySelector('.advanced-search-btn');
+        if (advancedBtn) {
+            advancedBtn.classList.remove('active');
+        }
+        
+        // Apply filters and refresh
+        this.applyFilters();
+        this.refreshList();
+        
+        if (window.showToast) {
+            window.showToast('חיפוש מתקדם נוקה', 'info');
+        }
+    }
+    
+    setupSearchSuggestions() {
+        const searchInput = this.element.querySelector('.search-input');
+        const suggestionsContainer = this.element.querySelector('.search-suggestions');
+        const suggestionsList = this.element.querySelector('.suggestions-list');
+        
+        if (!searchInput || !suggestionsContainer || !suggestionsList) return;
+        
+        let suggestionsTimeout;
+        
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            
+            clearTimeout(suggestionsTimeout);
+            
+            if (query.length < 2) {
+                suggestionsContainer.style.display = 'none';
+                return;
+            }
+            
+            suggestionsTimeout = setTimeout(() => {
+                this.showSearchSuggestions(query, suggestionsList, suggestionsContainer);
+            }, 200);
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+    }
+    
+    showSearchSuggestions(query, suggestionsList, suggestionsContainer) {
+        // Get suggestions from recent searches and transaction data
+        const suggestions = this.generateSearchSuggestions(query);
+        
+        if (suggestions.length === 0) {
+            suggestionsContainer.style.display = 'none';
+            return;
+        }
+        
+        suggestionsList.innerHTML = suggestions.map(suggestion => `
+            <div class="suggestion-item" data-suggestion="${suggestion.text}">
+                <span class="suggestion-type">${suggestion.type}</span>
+                <span class="suggestion-text">${suggestion.text}</span>
+                <span class="suggestion-count">(${suggestion.count})</span>
+            </div>
+        `).join('');
+        
+        // Add click handlers for suggestions
+        suggestionsList.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const suggestion = item.dataset.suggestion;
+                this.element.querySelector('.search-input').value = suggestion;
+                this.filters.search = suggestion;
+                suggestionsContainer.style.display = 'none';
+                this.applyFilters();
+                this.refreshList();
+            });
+        });
+        
+        suggestionsContainer.style.display = 'block';
+    }
+    
+    generateSearchSuggestions(query) {
+        const suggestions = [];
+        const lowerQuery = query.toLowerCase();
+        
+        // Get unique descriptions that match
+        const descriptions = [...new Set(this.transactions
+            .map(t => t.description)
+            .filter(desc => desc.toLowerCase().includes(lowerQuery))
+        )].slice(0, 3);
+        
+        descriptions.forEach(desc => {
+            suggestions.push({
+                type: 'תיאור',
+                text: desc,
+                count: this.transactions.filter(t => t.description === desc).length
+            });
+        });
+        
+        // Get unique categories that match
+        const categories = [...new Set(this.transactions
+            .map(t => t.category)
+            .filter(cat => cat.toLowerCase().includes(lowerQuery))
+        )].slice(0, 3);
+        
+        categories.forEach(cat => {
+            suggestions.push({
+                type: 'קטגוריה',
+                text: cat,
+                count: this.transactions.filter(t => t.category === cat).length
+            });
+        });
+        
+        // Get unique tags that match
+        const tags = [...new Set(this.transactions
+            .flatMap(t => t.tags || [])
+            .filter(tag => tag.toLowerCase().includes(lowerQuery))
+        )].slice(0, 2);
+        
+        tags.forEach(tag => {
+            suggestions.push({
+                type: 'תגית',
+                text: tag,
+                count: this.transactions.filter(t => t.tags && t.tags.includes(tag)).length
+            });
+        });
+        
+        return suggestions.slice(0, 8); // Limit to 8 suggestions
+    }
+    
+    // Bulk Operations Methods
+    setupBulkCheckboxes() {
+        if (!this.element) return;
+        
+        // Delegate event for bulk checkboxes (they're added dynamically)
+        this.element.addEventListener('change', (e) => {
+            if (e.target.classList.contains('bulk-checkbox')) {
+                const transactionId = e.target.dataset.transactionId;
+                this.toggleTransactionSelection(transactionId, e.target.checked);
+            }
+        });
+    }
+    
+    toggleBulkMode() {
+        this.bulkMode = !this.bulkMode;
+        this.selectedTransactions.clear();
+        
+        // Re-render to show/hide checkboxes
+        this.refreshList();
+        this.updateHeaderActions();
+        
+        if (window.showToast) {
+            const message = this.bulkMode ? 'מצב בחירה מרובה הופעל' : 'מצב בחירה מרובה בוטל';
+            window.showToast(message, 'info');
+        }
+    }
+    
+    toggleTransactionSelection(transactionId, isSelected) {
+        if (isSelected) {
+            this.selectedTransactions.add(transactionId);
+        } else {
+            this.selectedTransactions.delete(transactionId);
+        }
+        
+        // Update the transaction item appearance
+        const transactionElement = this.element.querySelector(`[data-transaction-id="${transactionId}"]`);
+        if (transactionElement) {
+            transactionElement.classList.toggle('selected', isSelected);
+        }
+        
+        // Update header actions to reflect new selection count
+        this.updateHeaderActions();
+    }
+    
+    selectAllTransactions() {
+        this.displayedTransactions.forEach(transaction => {
+            this.selectedTransactions.add(transaction.id);
+        });
+        
+        // Update all checkboxes
+        this.element.querySelectorAll('.bulk-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        
+        // Update all transaction items
+        this.element.querySelectorAll('.transaction-item').forEach(item => {
+            item.classList.add('selected');
+        });
+        
+        this.updateHeaderActions();
+        
+        if (window.showToast) {
+            window.showToast(`נבחרו ${this.selectedTransactions.size} עסקאות`, 'success');
+        }
+    }
+    
+    deselectAllTransactions() {
+        this.selectedTransactions.clear();
+        
+        // Update all checkboxes
+        this.element.querySelectorAll('.bulk-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        
+        // Update all transaction items
+        this.element.querySelectorAll('.transaction-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        this.updateHeaderActions();
+        
+        if (window.showToast) {
+            window.showToast('הבחירה בוטלה', 'info');
+        }
+    }
+    
+    async bulkDeleteTransactions() {
+        if (this.selectedTransactions.size === 0) return;
+        
+        const count = this.selectedTransactions.size;
+        const confirmMessage = `האם אתה בטוח שברצונך למחוק ${count} עסקאות? פעולה זו לא ניתנת לביטול.`;
+        
+        if (!confirm(confirmMessage)) return;
+        
+        try {
+            const { DataManager } = await import('../data/index.js');
+            
+            // Delete each selected transaction
+            for (const transactionId of this.selectedTransactions) {
+                await DataManager.deleteTransaction(transactionId);
+            }
+            
+            // Clear selection and refresh
+            this.selectedTransactions.clear();
+            await this.loadTransactions();
+            this.refreshList();
+            this.updateHeaderActions();
+            
+            if (window.showToast) {
+                window.showToast(`${count} עסקאות נמחקו בהצלחה`, 'success');
+            }
+            
+        } catch (error) {
+            console.error('Bulk delete failed:', error);
+            if (window.showToast) {
+                window.showToast('שגיאה במחיקת העסקאות', 'error');
+            }
+        }
+    }
+    
+    async bulkCategorizeTransactions() {
+        if (this.selectedTransactions.size === 0) return;
+        
+        try {
+            // Import category manager for category selection
+            const { Modal } = await import('./Modal.js');
+            const { DataManager } = await import('../data/index.js');
+            
+            // Get available categories
+            const categories = await DataManager.getCategories();
+            
+            // Create category selection modal
+            const modalContainer = document.createElement('div');
+            const modal = new Modal(modalContainer, {
+                title: `שינוי קטגוריה ל-${this.selectedTransactions.size} עסקאות`,
+                size: 'medium'
+            });
+            
+            const categorySelect = document.createElement('select');
+            categorySelect.className = 'form-input';
+            categorySelect.innerHTML = `
+                <option value="">בחר קטגוריה חדשה...</option>
+                ${categories.map(cat => `
+                    <option value="${cat.id}">${cat.name} (${cat.type === 'income' ? 'הכנסה' : 'הוצאה'})</option>
+                `).join('')}
+            `;
+            
+            const confirmButton = document.createElement('button');
+            confirmButton.className = 'btn-primary';
+            confirmButton.textContent = 'שנה קטגוריה';
+            confirmButton.style.marginTop = 'var(--spacing-md)';
+            
+            const content = document.createElement('div');
+            content.appendChild(categorySelect);
+            content.appendChild(confirmButton);
+            
+            modal.setContent(content);
+            modal.open();
+            document.body.appendChild(modalContainer);
+            
+            confirmButton.addEventListener('click', async () => {
+                const newCategoryId = categorySelect.value;
+                if (!newCategoryId) {
+                    if (window.showToast) {
+                        window.showToast('יש לבחור קטגוריה', 'warning');
+                    }
+                    return;
+                }
+                
+                try {
+                    // Update each selected transaction
+                    for (const transactionId of this.selectedTransactions) {
+                        const transaction = this.transactions.find(t => t.id === transactionId);
+                        if (transaction) {
+                            await DataManager.updateTransaction(transactionId, {
+                                ...transaction,
+                                category: newCategoryId,
+                                updatedAt: new Date().toISOString()
+                            });
+                        }
+                    }
+                    
+                    // Clear selection and refresh
+                    this.selectedTransactions.clear();
+                    await this.loadTransactions();
+                    this.refreshList();
+                    this.updateHeaderActions();
+                    
+                    modal.close();
+                    modalContainer.remove();
+                    
+                    if (window.showToast) {
+                        window.showToast('הקטגוריה עודכנה בהצלחה', 'success');
+                    }
+                    
+                } catch (error) {
+                    console.error('Bulk categorize failed:', error);
+                    if (window.showToast) {
+                        window.showToast('שגיאה בעדכון הקטגוריה', 'error');
+                    }
+                }
+            });
+            
+        } catch (error) {
+            console.error('Failed to load bulk categorize modal:', error);
+            if (window.showToast) {
+                window.showToast('שגיאה בטעינת אפשרויות הקטגוריה', 'error');
+            }
+        }
+    }
+    
+    async bulkExportTransactions() {
+        if (this.selectedTransactions.size === 0) return;
+        
+        try {
+            const { DataManager } = await import('../data/index.js');
+            
+            // Get selected transactions
+            const selectedTransactions = this.transactions.filter(t => 
+                this.selectedTransactions.has(t.id)
+            );
+            
+            // Export selected transactions
+            await DataManager.exportTransactions(selectedTransactions, {
+                format: 'csv',
+                filename: `עסקאות_נבחרות_${new Date().toISOString().split('T')[0]}.csv`,
+                includeHeaders: true
+            });
+            
+            if (window.showToast) {
+                window.showToast(`${selectedTransactions.length} עסקאות יוצאו בהצלחה`, 'success');
+            }
+            
+        } catch (error) {
+            console.error('Bulk export failed:', error);
+            if (window.showToast) {
+                window.showToast('שגיאה ביצוא העסקאות', 'error');
+            }
+        }
+    }
+    
+    updateHeaderActions() {
+        const headerActionsContainer = this.element?.querySelector('.header-action-buttons');
+        if (headerActionsContainer) {
+            headerActionsContainer.innerHTML = this.renderHeaderActions().match(/<div class="header-action-buttons">(.*?)<\/div>/s)[1];
         }
     }
 }

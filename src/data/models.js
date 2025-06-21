@@ -47,6 +47,10 @@ export class Transaction {
     this.מיקום = data.מיקום || '';
     this.קבלה = data.קבלה || '';
     this.חוזר = data.חוזר || null;
+    this.סטטוס = data.סטטוס || 'ממתין'; // 'ממתין' | 'מאושר' | 'נדחה' | 'בביקורת'
+    this.מאשר = data.מאשר || ''; // מי אישר/דחה את העסקה
+    this.תאריך_אישור = data.תאריך_אישור || null;
+    this.הערות_אישור = data.הערות_אישור || '';
     this.נוצר = data.נוצר || new Date().toISOString();
     this.עודכן = data.עודכן || new Date().toISOString();
     this.מקור = data.מקור || 'manual';
